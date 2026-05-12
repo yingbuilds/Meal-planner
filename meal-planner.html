@@ -1,0 +1,3450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>备餐计划</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f0ebe3;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px 0;
+  }
+  #root {
+    width: 375px;
+    min-height: 812px;
+    background: #faf8f5;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.25), 0 0 0 10px #1a1a1a, 0 0 0 12px #3a3a3a;
+  }
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 812px;
+    overflow: hidden;
+  }
+  .screen {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 80px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .screen::-webkit-scrollbar { display: none; }
+  .bottom-nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    align-items: flex-start;
+    padding-top: 8px;
+    z-index: 100;
+    border-radius: 0 0 44px 44px;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 6px 4px;
+    transition: all 0.15s;
+    border: none;
+    background: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-icon { font-size: 22px; line-height: 1; }
+  .nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.2px; }
+  .nav-item.active .nav-label { color: #c17f3c; }
+  .nav-item.inactive .nav-label { color: #9a9590; }
+  .nav-item.active .nav-dot {
+    width: 4px; height: 4px;
+    background: #c17f3c;
+    border-radius: 50%;
+    margin-top: 2px;
+  }
+
+  /* Typography */
+  .screen-title { font-size: 28px; font-weight: 700; color: #1a1714; letter-spacing: -0.5px; }
+  .section-title { font-size: 16px; font-weight: 600; color: #1a1714; letter-spacing: -0.2px; }
+  .body-text { font-size: 14px; color: #5a5550; line-height: 1.5; }
+  .caption { font-size: 12px; color: #9a9590; }
+
+  /* Cards */
+  .card {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-pressed { transform: scale(0.98); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .badge-youtube { background: #fff0f0; color: #e53935; }
+  .badge-web { background: #f0f4ff; color: #3b5bdb; }
+  .badge-xiaohongshu { background: #fff0f2; color: #e91e63; }
+  .badge-category { background: #fdf3e7; color: #c17f3c; }
+  .badge-easy { background: #f0faf0; color: #2e7d32; }
+  .badge-medium { background: #fff8e1; color: #f57f17; }
+  .badge-hard { background: #fce4ec; color: #c62828; }
+
+  /* Buttons */
+  .btn-primary {
+    background: #c17f3c;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-primary:active { transform: scale(0.98); background: #a8692d; }
+  .btn-secondary {
+    background: #f5f0ea;
+    color: #c17f3c;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-secondary:active { transform: scale(0.98); }
+  .btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Input */
+  .input-field {
+    background: #f5f0ea;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-size: 15px;
+    width: 100%;
+    color: #1a1714;
+    outline: none;
+    font-family: inherit;
+  }
+  .input-field:focus { background: #eee8df; }
+  .input-field::placeholder { color: #b0a89e; }
+
+  /* Search bar */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    background: #f5f0ea;
+    border-radius: 14px;
+    padding: 0 14px;
+    gap: 10px;
+  }
+  .search-bar input {
+    background: none;
+    border: none;
+    padding: 13px 0;
+    font-size: 15px;
+    flex: 1;
+    color: #1a1714;
+    outline: none;
+    font-family: inherit;
+  }
+  .search-bar input::placeholder { color: #b0a89e; }
+
+  /* Tag chips */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+  }
+  .chip-active { background: #c17f3c; color: #fff; }
+  .chip-inactive { background: #f5f0ea; color: #5a5550; }
+
+  /* Checkbox */
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 0;
+    gap: 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #f5f0ea;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .checkbox-row:last-child { border-bottom: none; }
+  .checkbox {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    border: 2px solid #d4cdc5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .checkbox.checked { background: #c17f3c; border-color: #c17f3c; }
+
+  /* Scroll chips */
+  .chips-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .chips-row::-webkit-scrollbar { display: none; }
+
+  /* Overlays */
+  .modal-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+  }
+  .modal-sheet {
+    background: #faf8f5;
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-height: 85%;
+    overflow-y: auto;
+    padding: 20px;
+    padding-bottom: 40px;
+  }
+  .modal-handle {
+    width: 36px;
+    height: 4px;
+    background: #d4cdc5;
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  /* Step indicator */
+  .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #fdf3e7;
+    color: #c17f3c;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-number.active-step {
+    background: #c17f3c;
+    color: #fff;
+  }
+
+  /* Day card */
+  .day-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  /* Meal slot */
+  .meal-slot {
+    background: #faf8f5;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .meal-slot-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #9a9590;
+    margin-bottom: 8px;
+  }
+
+  /* Cooking mode */
+  .cooking-mode {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #1a1714;
+    z-index: 300;
+    overflow-y: auto;
+    padding: 44px 24px 40px;
+  }
+  .cooking-step-card {
+    background: #2a2520;
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .cooking-step-card.current {
+    background: #3d2e1a;
+    border: 2px solid #c17f3c;
+  }
+
+  /* Note highlight */
+  .note-card {
+    background: #fff8ed;
+    border-left: 4px solid #c17f3c;
+    border-radius: 0 12px 12px 0;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+  }
+
+  /* Ingredient row */
+  .ingredient-row {
+    display: flex;
+    align-items: center;
+    padding: 11px 0;
+    border-bottom: 1px solid #f5f0ea;
+    gap: 10px;
+  }
+  .ingredient-row:last-child { border-bottom: none; }
+
+  /* Source card */
+  .source-card {
+    background: #f5f0ea;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s;
+  }
+  .source-card:active { transform: scale(0.98); }
+
+  /* Tag */
+  .tag { font-size: 11px; }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 32px;
+    text-align: center;
+    gap: 12px;
+  }
+  .empty-icon { font-size: 52px; }
+
+  /* Divider */
+  .divider { height: 1px; background: #f0ebe3; margin: 8px 0; }
+
+  /* Toast */
+  .toast {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1714;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 500;
+    white-space: nowrap;
+    animation: fadeInOut 2s ease forwards;
+  }
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    75% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .header-bar {
+    padding: 52px 20px 16px;
+    background: #faf8f5;
+  }
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: #c17f3c;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 4px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  textarea.input-field { resize: none; min-height: 80px; }
+
+  .form-section { margin-bottom: 24px; }
+  .form-label { font-size: 13px; font-weight: 600; color: #5a5550; margin-bottom: 8px; display: block; letter-spacing: 0.2px; }
+
+  .progress-dots { display: flex; gap: 6px; justify-content: center; margin: 16px 0; }
+  .progress-dot { width: 6px; height: 6px; border-radius: 3px; background: #d4cdc5; transition: all 0.2s; }
+  .progress-dot.active { width: 20px; background: #c17f3c; }
+
+  .dish-image-placeholder {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    background: linear-gradient(135deg, #fdf3e7, #f5e8d0);
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f5f0ea;
+  }
+  .summary-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback, useMemo } = React;
+
+// ─── SEED DATA ────────────────────────────────────────────────────
+const SEED_DISHES = [
+  {
+    id: "d11",
+    name: "捞汁小海鲜",
+    category: "海鲜",
+    servings: 3,
+    estimated_time: 25,
+    difficulty: "easy",
+    image: "🦪",
+    is_favorite: true,
+    cook_count: 0,
+    last_cooked_date: null,
+    custom_notes: [
+      "蛤蜊要提前泡盐水至少2小时吐沙 — 沙没吐净就全毁了",
+      "生蚝焯水只需30秒，不能久，熟了就老",
+      "捞汁要提前调好冷藏，冷的汁拌热的海鲜才够味",
+      "蒜末、小米辣、香菜三样都不能少",
+      "吃之前再拌，不要提前泡太久"
+    ],
+    ingredients: [
+      { name: "蛤蜊", quantity: 500, unit: "g", optional: false },
+      { name: "生蚝", quantity: 6, unit: "只", optional: false },
+      { name: "鱼露", quantity: 1, unit: "勺", optional: false },
+      { name: "米醋", quantity: 2, unit: "勺", optional: false },
+      { name: "蒜", quantity: 5, unit: "瓣", optional: false },
+      { name: "小米辣", quantity: 3, unit: "根", optional: false },
+      { name: "柠檬汁", quantity: 1, unit: "勺", optional: false },
+      { name: "香菜", quantity: 1, unit: "小把", optional: false },
+    ],
+    steps: [
+      { step_number: 1, instruction: "蛤蜊提前泡盐水2小时吐沙，清洗干净。", tip: "盐水比例约3%，放阴凉处" },
+      { step_number: 2, instruction: "调捞汁：生抽、鱼露、米醋、糖、柠檬汁、蒜末、小米辣、麻油混合，冷藏备用。", tip: "提前半小时调好，让味道融合" },
+      { step_number: 3, instruction: "沸水下蛤蜊，煮至开口（约2分钟），立刻捞出，去掉没开口的。", tip: null },
+      { step_number: 4, instruction: "生蚝沸水焯30秒，捞出立刻过冰水。", tip: "时间严格控制，过了就老" },
+      { step_number: 5, instruction: "海鲜稍凉后放入盆中，倒入捞汁翻拌均匀，撒香菜即上桌。", tip: null },
+    ],
+    source_links: []
+  },
+  {
+    id: "d12",
+    name: "干豆角烧排骨",
+    category: "猪肉",
+    servings: 4,
+    estimated_time: 75,
+    difficulty: "medium",
+    image: "🍖",
+    is_favorite: true,
+    cook_count: 0,
+    last_cooked_date: null,
+    custom_notes: [
+      "干豆角提前泡发至少4小时，泡发后体积会膨胀很多",
+      "排骨要冷水焯水去腥，不用热水",
+      "干豆角吸油吸汤，所以汤要多放一点",
+      "小火慢焖40分钟以上，豆角才够软烂入味",
+      "最后大火收汁，汤汁浓稠才好吃"
+    ],
+    ingredients: [
+      { name: "猪排骨", quantity: 700, unit: "g", optional: false },
+      { name: "干豆角", quantity: 80, unit: "g", optional: false },
+      { name: "冰糖", quantity: 20, unit: "g", optional: false },
+      { name: "八角", quantity: 2, unit: "颗", optional: false },
+      { name: "姜", quantity: 5, unit: "片", optional: false },
+      { name: "葱", quantity: 2, unit: "根", optional: false },
+      { name: "干辣椒", quantity: 3, unit: "根", optional: true },
+    ],
+    steps: [
+      { step_number: 1, instruction: "干豆角提前泡冷水4-6小时至软，换水洗净，切成5cm段。", tip: null },
+      { step_number: 2, instruction: "排骨冷水下锅，加葱姜，煮开3分钟焯水，捞出冲洗干净。", tip: "冷水焯出血沫更干净" },
+      { step_number: 3, instruction: "热锅下油，炒冰糖至琥珀色，加排骨翻炒裹色。", tip: null },
+      { step_number: 4, instruction: "加黄酒、老抽、生抽、八角、干辣椒翻炒，加热水没过食材。", tip: "水要多，干豆角很吸汤" },
+      { step_number: 5, instruction: "大火烧开后加入泡发的干豆角，转小火盖盖焖40-50分钟。", tip: null },
+      { step_number: 6, instruction: "开盖大火收汁至浓稠，调入盐，出锅。", tip: "汤汁收到裹住排骨即可" },
+    ],
+    source_links: []
+  },
+  {
+    id: "d13",
+    name: "春饼套餐",
+    category: "主食",
+    servings: 4,
+    estimated_time: 60,
+    difficulty: "medium",
+    image: "🫓",
+    is_favorite: true,
+    cook_count: 0,
+    last_cooked_date: null,
+    custom_notes: [
+      "春饼皮要烙得薄，能透光才好，不要烙太厚",
+      "和菜：豆芽、韭菜、粉丝、鸡蛋丝、胡萝卜丝一样不能少",
+      "京酱肉丝要提前腌好，豆瓣酱下锅要炒透不生",
+      "配菜必备：生葱段、黄瓜丝，吃之前现切，保持新鲜脆爽",
+      "卷春饼的顺序：先涂甜面酱，铺和菜，放肉丝，加生葱/黄瓜丝，卷紧"
+    ],
+    ingredients: [
+      { name: "猪里脊", quantity: 300, unit: "g", optional: false },
+      { name: "甜面酱", quantity: 3, unit: "勺", optional: false },
+      { name: "黄豆芽", quantity: 150, unit: "g", optional: false },
+      { name: "韭菜", quantity: 100, unit: "g", optional: false },
+      { name: "粉丝", quantity: 50, unit: "g", optional: false },
+      { name: "鸡蛋", quantity: 3, unit: "个", optional: false },
+      { name: "胡萝卜", quantity: 1, unit: "根", optional: false },
+      { name: "生葱", quantity: 4, unit: "根", optional: false },
+      { name: "黄瓜", quantity: 1, unit: "根", optional: false },
+    ],
+    steps: [
+      { step_number: 1, instruction: "面粉加热水揉成光滑面团，盖布醒30分钟。分成小剂子擀成薄圆饼，两张叠起刷油，烙至起泡、表面微干，趁热撕开成两张。", tip: "两张叠一起烙，撕开才够薄" },
+      { step_number: 2, instruction: "猪里脊切丝，加生抽、淀粉、料酒腌15分钟。热锅滑油炒至变色，加甜面酱炒匀盛出。", tip: "甜面酱要炒透，去除生味" },
+      { step_number: 3, instruction: "摊鸡蛋饼切丝备用。豆芽、韭菜、胡萝卜丝、粉丝分别炒熟，合在一起即为和菜。", tip: null },
+      { step_number: 4, instruction: "生葱切5cm段，黄瓜切细丝，上桌前现切。", tip: "现切保持脆爽" },
+      { step_number: 5, instruction: "上桌时：春饼、和菜、京酱肉丝、生葱段、黄瓜丝分盘摆放，自行卷食。", tip: "卷的顺序：甜面酱→和菜→肉丝→葱/黄瓜丝" },
+    ],
+    source_links: []
+  },
+  {
+    id: "d14",
+    name: "酸笋鱼配烤豆腐",
+    category: "海鲜",
+    servings: 3,
+    estimated_time: 45,
+    difficulty: "medium",
+    image: "🐠",
+    is_favorite: false,
+    cook_count: 0,
+    last_cooked_date: null,
+    custom_notes: [
+      "酸笋要提前用清水泡30分钟减酸，但保留一定酸味",
+      "鱼用草鱼或鲈鱼均可，切片不能太薄，约0.5cm",
+      "烤豆腐：老豆腐切厚片，空气炸锅200度15分钟，表面金黄微焦",
+      "空心菜先洗净去老茎，配烤豆腐一起上桌",
+      "汤底要够酸辣，鱼片最后下锅，30秒出锅不能久"
+    ],
+    ingredients: [
+      { name: "草鱼或鲈鱼", quantity: 600, unit: "g", optional: false },
+      { name: "酸笋", quantity: 150, unit: "g", optional: false },
+      { name: "老豆腐", quantity: 300, unit: "g", optional: false },
+      { name: "空心菜", quantity: 300, unit: "g", optional: false },
+      { name: "泡椒", quantity: 4, unit: "根", optional: false },
+      { name: "姜", quantity: 4, unit: "片", optional: false },
+      { name: "蒜", quantity: 4, unit: "瓣", optional: false },
+      { name: "鸡高汤", quantity: 500, unit: "ml", optional: false },
+    ],
+    steps: [
+      { step_number: 1, instruction: "酸笋切片，清水泡30分钟，捞出备用。鱼片加盐、淀粉腌10分钟。", tip: null },
+      { step_number: 2, instruction: "老豆腐切2cm厚片，刷油，空气炸锅200度烤15分钟至表面金黄。", tip: "没有空气炸锅可用平底锅两面煎至金黄" },
+      { step_number: 3, instruction: "热锅下油，炒香姜、蒜、泡椒。加酸笋翻炒2分钟。", tip: null },
+      { step_number: 4, instruction: "加鸡高汤烧开，加生抽调味，小火煮5分钟让汤底出味。", tip: null },
+      { step_number: 5, instruction: "鱼片下锅，轻推，煮约30-40秒至变色即出锅。", tip: "鱼片嫩，时间宁短不长" },
+      { step_number: 6, instruction: "空心菜焯水或清炒，与烤豆腐一起作为配菜上桌。", tip: null },
+    ],
+    source_links: []
+  },
+  {
+    id: "d15",
+    name: "泡椒炒牛肉",
+    category: "牛肉",
+    servings: 3,
+    estimated_time: 30,
+    difficulty: "medium",
+    image: "🌶️",
+    is_favorite: false,
+    cook_count: 0,
+    last_cooked_date: null,
+    custom_notes: [
+      "牛肉用小苏打嫩化30分钟，一定要冲洗干净再腌",
+      "泡椒是灵魂，不要替换成其他辣椒",
+      "全程大火，牛肉分批下锅不要叠放",
+      "出锅前加少量米醋提鲜 — 不能多，点到即止",
+      "泡椒的酸味已经够了，少放或不放生抽，避免太咸"
+    ],
+    ingredients: [
+      { name: "牛里脊或腱子肉", quantity: 400, unit: "g", optional: false },
+      { name: "泡椒", quantity: 8, unit: "根", optional: false },
+      { name: "泡椒水", quantity: 2, unit: "勺", optional: false },
+      { name: "姜", quantity: 3, unit: "片", optional: false },
+      { name: "蒜", quantity: 3, unit: "瓣", optional: false },
+      { name: "葱", quantity: 2, unit: "根", optional: false },
+      { name: "米醋", quantity: 0.5, unit: "茶匙", optional: false },
+    ],
+    steps: [
+      { step_number: 1, instruction: "牛肉逆纹薄切，加小苏打+水拌匀，静置30分钟，充分冲洗干净，再加生抽、淀粉腌10分钟。", tip: "小苏打一定要洗干净" },
+      { step_number: 2, instruction: "泡椒斜切备用，留少量泡椒水。", tip: null },
+      { step_number: 3, instruction: "锅烧至极热，下油，牛肉分批大火快炒，每批30-40秒变色即出，不要炒全熟。", tip: "不叠放，留锅气" },
+      { step_number: 4, instruction: "同锅下姜、蒜爆香，加泡椒大火翻炒1分钟。", tip: null },
+      { step_number: 5, instruction: "牛肉回锅，加泡椒水，大火翻炒30秒。", tip: null },
+      { step_number: 6, instruction: "出锅前沿锅边淋少量米醋，翻匀立刻出锅。", tip: "醋要点到即止，只提鲜不留酸味" },
+    ],
+    source_links: []
+  },
+  {
+    id: "d16",
+    name: "东安鸡配冬笋",
+    category: "鸡肉",
+    servings: 3,
+    estimated_time: 40,
+    difficulty: "medium",
+    image: "🍋",
+    is_favorite: true,
+    cook_count: 0,
+    last_cooked_date: null,
+    custom_notes: [
+      "东安鸡必须用整鸡煮熟再切，不要直接炒生鸡",
+      "醋是灵魂：米醋2勺，出锅前再加，不能早放",
+      "花椒要现磨，不用花椒粉代替",
+      "冬笋提前焯水去涩，切片要均匀",
+      "汤汁要浓但不能太稠，最后的勾芡只需薄薄一层"
+    ],
+    ingredients: [
+      { name: "整鸡或鸡腿", quantity: 1, unit: "只", optional: false },
+      { name: "冬笋", quantity: 200, unit: "g", optional: false },
+      { name: "干辣椒", quantity: 5, unit: "根", optional: false },
+      { name: "花椒", quantity: 1, unit: "茶匙", optional: false },
+      { name: "姜", quantity: 5, unit: "片", optional: false },
+      { name: "大葱", quantity: 2, unit: "段", optional: false },
+      { name: "米醋", quantity: 2, unit: "勺", optional: false },
+    ],
+    steps: [
+      { step_number: 1, instruction: "整鸡冷水下锅，加葱姜黄酒，煮开后转小火煮20分钟至熟，捞出晾凉。拆骨切块。", tip: "鸡汤留用" },
+      { step_number: 2, instruction: "冬笋切片，沸水焯3分钟去涩，捞出备用。", tip: "冬笋必须焯水，生的有涩味" },
+      { step_number: 3, instruction: "热油下干辣椒、花椒爆香30秒，加姜片炒匀。", tip: null },
+      { step_number: 4, instruction: "加冬笋翻炒2分钟，加鸡块，倒入生抽、黄酒、少量煮鸡原汤，大火烧开。", tip: null },
+      { step_number: 5, instruction: "加盐调味，水淀粉勾薄芡，汤汁刚好裹住食材即可。", tip: "芡要薄，不要太稠" },
+      { step_number: 6, instruction: "出锅前沿锅边加米醋，翻匀立刻出锅。", tip: "醋最后放，香气才足" },
+    ],
+    source_links: []
+  }
+];
+
+const SEED_MEAL_PLAN = {
+  id: "mp1",
+  week_range: "2026年5月12日–16日",
+  days: [
+    {
+      date: "周一 5月12日",
+      short: "周一",
+      meals: { breakfast: [], lunch: ["d11", "d13"], dinner: [] },
+      notes: "师傅10点到。捞汁海鲜提前冰好。春饼皮现烙现吃。",
+      status: "pending"
+    },
+    {
+      date: "周二 5月13日",
+      short: "周二",
+      meals: { breakfast: [], lunch: ["d12", "d14"], dinner: [] },
+      notes: "干豆角需提前泡发。酸笋鱼搭配烤豆腐一起上。",
+      status: "pending"
+    },
+    {
+      date: "周三 5月14日",
+      short: "周三",
+      meals: { breakfast: [], lunch: ["d16", "d15"], dinner: [] },
+      notes: "东安鸡前一晚腌好。泡椒牛肉大火快炒，出锅要快。",
+      status: "pending"
+    },
+    {
+      date: "周四 5月15日",
+      short: "周四",
+      meals: { breakfast: [], lunch: ["d14", "d11"], dinner: [] },
+      notes: "鱼用新鲜的。干豆角需提前一天泡发。",
+      status: "pending"
+    },
+    {
+      date: "周五 5月16日",
+      short: "周五",
+      meals: { breakfast: [], lunch: ["d16", "d12"], dinner: [] },
+      notes: "",
+      status: "pending"
+    }
+  ]
+};
+
+const SEED_GROCERY = {
+  id: "g1",
+  linked_meal_plan_id: "mp1",
+  items: [
+    { id: "g1", name: "蛤蜊", quantity: 500, unit: "g", category: "肉类 & 海鲜", checked: false },
+    { id: "g2", name: "生蚝", quantity: 6, unit: "只", category: "肉类 & 海鲜", checked: false },
+    { id: "g3", name: "猪排骨", quantity: 800, unit: "g", category: "肉类 & 海鲜", checked: false },
+    { id: "g4", name: "酸笋鱼（整条）", quantity: 1, unit: "条", category: "肉类 & 海鲜", checked: false },
+    { id: "g5", name: "牛肉（薄切）", quantity: 400, unit: "g", category: "肉类 & 海鲜", checked: false },
+    { id: "g6", name: "鸡腿", quantity: 4, unit: "只", category: "肉类 & 海鲜", checked: false },
+    { id: "g7", name: "北豆腐", quantity: 400, unit: "g", category: "豆制品", checked: false },
+    { id: "g8", name: "空心菜", quantity: 300, unit: "g", category: "蔬菜", checked: false },
+    { id: "g9", name: "冬笋", quantity: 200, unit: "g", category: "蔬菜", checked: false },
+    { id: "g10", name: "黄瓜丝", quantity: 2, unit: "根", category: "蔬菜", checked: false },
+    { id: "g11", name: "生葱", quantity: 1, unit: "把", category: "蔬菜", checked: false },
+    { id: "g12", name: "泡椒", quantity: 1, unit: "罐", category: "调味品", checked: false },
+    { id: "g13", name: "捞汁调味汁", quantity: 1, unit: "瓶", category: "调味品", checked: false },
+    { id: "g14", name: "京酱（黄豆酱）", quantity: 1, unit: "罐", category: "调味品", checked: false },
+    { id: "g15", name: "酸笋（袋装）", quantity: 1, unit: "袋", category: "调味品", checked: false },
+    { id: "g16", name: "生姜", quantity: 1, unit: "大块", category: "香料", checked: false },
+    { id: "g17", name: "大蒜", quantity: 2, unit: "头", category: "香料", checked: false },
+    { id: "g18", name: "葱", quantity: 1, unit: "把", category: "香料", checked: false },
+    { id: "g19", name: "干豆角", quantity: 150, unit: "g", category: "粮油干货", checked: false },
+    { id: "g20", name: "春饼皮", quantity: 20, unit: "张", category: "粮油干货", checked: false },
+    { id: "g21", name: "猪肉丝（京酱用）", quantity: 300, unit: "g", category: "肉类 & 海鲜", checked: false },
+  ]
+};
+
+// ─── UTILITIES ────────────────────────────────────────────────────
+const CATEGORIES = ["全部", "猪肉", "牛肉", "羊肉", "鸡肉", "鸭肉", "海鲜", "蔬菜", "豆腐", "主食", "汤品"];
+const CATEGORY_EMOJI = { "猪肉": "🐷", "牛肉": "🐄", "羊肉": "🐑", "鸡肉": "🍗", "鸭肉": "🦆", "海鲜": "🦐", "蔬菜": "🥦", "豆腐": "🫕", "主食": "🍚", "汤品": "🍲" };
+const VALID_CATEGORIES = ["猪肉","牛肉","羊肉","鸡肉","鸭肉","海鲜","蔬菜","豆腐","主食","汤品"];
+function normalizeCategory(raw) {
+  if (!raw) return "猪肉";
+  if (VALID_CATEGORIES.includes(raw)) return raw;
+  if (/鱼|虾|蟹|贝|螺|蚌|蛤|蚝|海鲜|海产|水产/.test(raw)) return "海鲜";
+  if (/鸭/.test(raw)) return "鸭肉";
+  if (/鸡/.test(raw)) return "鸡肉";
+  if (/羊/.test(raw)) return "羊肉";
+  if (/牛/.test(raw)) return "牛肉";
+  if (/猪|排骨|五花|肉类/.test(raw)) return "猪肉";
+  if (/汤/.test(raw)) return "汤品";
+  if (/豆腐/.test(raw)) return "豆腐";
+  if (/蔬菜|素/.test(raw)) return "蔬菜";
+  if (/饭|面|粉|主食|粥/.test(raw)) return "主食";
+  return "猪肉";
+}
+
+const PANTRY_STAPLES = new Set([
+  "盐","糖","白糖","冰糖","油","食用油","花生油","菜籽油","大豆油","橄榄油",
+  "生抽","老抽","酱油","蚝油","料酒","米酒","黄酒","绍兴黄酒","绍兴酒",
+  "味精","鸡精","鸡粉","白胡椒粉","胡椒粉","五香粉",
+  "淀粉","生粉","玉米淀粉","水淀粉","面粉",
+  "香油","麻油","芝麻油",
+  "醋","白醋","陈醋",
+  "水","热水","冷水","高汤",
+  "小苏打","泡打粉","酵母",
+]);
+
+function isPantryStaple(name) {
+  const n = name.trim();
+  if (PANTRY_STAPLES.has(n)) return true;
+  // strip parenthetical notes like "生抽（腌肉）"
+  const base = n.replace(/[（(][^）)]*[）)]/g, "").trim();
+  return PANTRY_STAPLES.has(base);
+}
+
+const EMOJI_CATALOG = [
+  // 禽类
+  { e: "🍗", k: "鸡 鸡肉 鸡腿 鸡翅 鸡胸 烤鸡" },
+  { e: "🐔", k: "鸡 整鸡 白切鸡 鸡肉" },
+  { e: "🦆", k: "鸭 鸭肉 烤鸭 北京鸭 鸭腿" },
+  { e: "🦢", k: "鹅 鹅肉 卤鹅 烤鹅" },
+  { e: "🐧", k: "鸽子 乳鸽 鸽" },
+  { e: "🦃", k: "火鸡 感恩节" },
+  { e: "🥚", k: "鸡蛋 蛋 煎蛋 炒蛋 蒸蛋 皮蛋 咸蛋" },
+  { e: "🍳", k: "煎蛋 荷包蛋 早餐 煎" },
+  // 猪牛羊
+  { e: "🐷", k: "猪 猪肉 五花肉 猪蹄 猪排 红烧肉" },
+  { e: "🥩", k: "牛排 肉 牛肉 猪肉 烤肉 红烧" },
+  { e: "🍖", k: "排骨 猪排 羊排 肋排 骨头" },
+  { e: "🐄", k: "牛 牛肉 牛腩 牛腱 牛排" },
+  { e: "🐂", k: "牛 黄牛 牛肉 卤牛肉" },
+  { e: "🐑", k: "羊 羊肉 烤羊 涮羊肉 手抓羊" },
+  { e: "🫀", k: "猪心 牛心 内脏 心" },
+  { e: "🧠", k: "脑花 猪脑 牛脑" },
+  // 海鲜水产
+  { e: "🐟", k: "鱼 清蒸鱼 红烧鱼 海鲜" },
+  { e: "🐠", k: "鱼 热带鱼 彩色鱼" },
+  { e: "🐡", k: "鱼 河鱼 淡水鱼" },
+  { e: "🦐", k: "虾 基围虾 大虾 白灼虾 海鲜" },
+  { e: "🦞", k: "龙虾 波士顿龙虾 海鲜" },
+  { e: "🦀", k: "螃蟹 大闸蟹 梭子蟹 蟹 海鲜" },
+  { e: "🦑", k: "鱿鱼 墨鱼 乌贼 海鲜" },
+  { e: "🐙", k: "章鱼 八爪鱼 海鲜" },
+  { e: "🦪", k: "生蚝 牡蛎 蚝 海鲜 贝类" },
+  { e: "🐚", k: "螺 田螺 海螺 花甲 蛤蜊 贝壳" },
+  { e: "🐬", k: "海豚 海鲜" },
+  { e: "🦈", k: "鲨鱼 鱼翅 海鲜" },
+  // 蔬菜
+  { e: "🥦", k: "西兰花 花椰菜 蔬菜" },
+  { e: "🥬", k: "青菜 白菜 生菜 叶菜 蔬菜" },
+  { e: "🥒", k: "黄瓜 蔬菜 凉拌" },
+  { e: "🍅", k: "番茄 西红柿 炒蛋" },
+  { e: "🌽", k: "玉米 甜玉米 蔬菜" },
+  { e: "🥕", k: "胡萝卜 红萝卜 蔬菜" },
+  { e: "🧅", k: "洋葱 葱头 蔬菜" },
+  { e: "🧄", k: "大蒜 蒜 调味 蒜蓉" },
+  { e: "🌶️", k: "辣椒 红椒 辣 剁椒" },
+  { e: "🫑", k: "甜椒 青椒 菜椒 彩椒" },
+  { e: "🥑", k: "牛油果 avocado 沙拉" },
+  { e: "🍆", k: "茄子 烧茄子 蒜泥茄子" },
+  { e: "🥔", k: "土豆 马铃薯 薯条 红烧土豆" },
+  { e: "🫛", k: "豌豆 荷兰豆 豆角 四季豆" },
+  { e: "🌿", k: "香菜 香草 芹菜 蔬菜" },
+  { e: "🍃", k: "薄荷 香草 绿叶" },
+  { e: "🧅", k: "洋葱 紫洋葱" },
+  // 豆腐菌菇
+  { e: "🫕", k: "豆腐 麻婆豆腐 炖 砂锅" },
+  { e: "🍄", k: "蘑菇 香菇 菌菇 金针菇 平菇" },
+  { e: "🫘", k: "豆子 黄豆 红豆 豆腐 豆制品" },
+  // 主食
+  { e: "🍚", k: "米饭 白饭 炒饭 主食" },
+  { e: "🍜", k: "面条 拉面 汤面 炒面" },
+  { e: "🍝", k: "意面 意大利面 番茄肉酱" },
+  { e: "🍛", k: "咖喱饭 咖喱 盖浇饭" },
+  { e: "🥟", k: "饺子 馄饨 锅贴 包子 点心" },
+  { e: "🫓", k: "面包 烤饼 馒头 包子 主食" },
+  { e: "🥣", k: "粥 燕麦 稀饭 早餐" },
+  { e: "🍙", k: "饭团 手握饭 日式" },
+  { e: "🥞", k: "煎饼 早餐 烙饼" },
+  // 汤类
+  { e: "🍲", k: "汤 炖 火锅 砂锅 煲汤" },
+  { e: "🫖", k: "老火汤 茶 炖汤 煲" },
+  { e: "🥘", k: "炖菜 杂烩 煲仔饭" },
+  // 日式韩式
+  { e: "🍣", k: "寿司 日式 海鲜 三文鱼" },
+  { e: "🍱", k: "便当 盒饭 日式 定食" },
+  { e: "🍤", k: "炸虾 天妇罗 炸物" },
+  { e: "🍙", k: "饭团 日式" },
+  // 小吃甜品
+  { e: "🧆", k: "丸子 肉丸 鱼丸 炸物" },
+  { e: "🥮", k: "月饼 糕点 甜品" },
+  { e: "🧁", k: "蛋糕 甜品 烘焙 纸杯蛋糕" },
+  { e: "🍰", k: "蛋糕 芝士蛋糕 甜品" },
+  { e: "🍡", k: "汤圆 丸子 串串 甜品" },
+  { e: "🥜", k: "花生 坚果 零食 花生酱" },
+  { e: "🌰", k: "板栗 糖炒栗子 坚果" },
+  // 调料烹饪
+  { e: "🫚", k: "油 食用油 烹饪" },
+  { e: "🍋", k: "柠檬 酸 调味 水果" },
+  { e: "🥢", k: "筷子 中式 餐具" },
+  { e: "🍽️", k: "餐盘 摆盘 正餐" },
+];
+
+function getDishById(dishes, id) {
+  return dishes.find(d => d.id === id);
+}
+
+function groupBy(arr, key) {
+  return arr.reduce((acc, item) => {
+    const k = item[key];
+    if (!acc[k]) acc[k] = [];
+    acc[k].push(item);
+    return acc;
+  }, {});
+}
+
+// ─── ICONS ────────────────────────────────────────────────────────
+const Icons = {
+  home: "🏠", dishes: "🍽️", plan: "📅", grocery: "🛒", share: "👨‍🍳",
+  search: "🔍", heart: "♡", heartFilled: "♥", plus: "+", back: "←",
+  check: "✓", star: "★", clock: "⏱", fire: "🔥", edit: "✏️",
+  swap: "↔️", regen: "🔄", link: "🔗", youtube: "▶", web: "🌐", xhs: "📕",
+  chef: "👨‍🍳", share2: "📤", copy: "📋", sparkle: "✨", trash: "✕"
+};
+
+// ─── COMPONENTS ────────────────────────────────────────────────────
+
+function BottomNav({ active, onNavigate }) {
+  const tabs = [
+    { id: "home", icon: "🏠", label: "首页" },
+    { id: "dishes", icon: "🍽️", label: "菜品库" },
+    { id: "plan", icon: "📅", label: "菜单" },
+    { id: "grocery", icon: "🛒", label: "采购" },
+    { id: "share", icon: "👨‍🍳", label: "厨师" },
+  ];
+  return (
+    <div className="bottom-nav">
+      {tabs.map(tab => (
+        <button
+          key={tab.id}
+          className={`nav-item ${active === tab.id ? "active" : "inactive"}`}
+          onClick={() => onNavigate(tab.id)}
+        >
+          <span className="nav-icon">{tab.icon}</span>
+          <span className="nav-label">{tab.label}</span>
+          {active === tab.id && <div className="nav-dot" />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Toast({ msg }) {
+  if (!msg) return null;
+  return <div className="toast">{msg}</div>;
+}
+
+// ─── HOME SCREEN ──────────────────────────────────────────────────
+function HomeScreen({ dishes, mealPlan, groceryList, onNavigate, showToast }) {
+  const today = mealPlan?.days?.[0];
+  const groceryPending = groceryList?.items?.filter(i => !i.checked).length || 0;
+
+  return (
+    <div className="screen">
+      {/* Header */}
+      <div style={{ padding: "52px 20px 8px", background: "#faf8f5" }}>
+        <div className="caption" style={{ marginBottom: 4 }}>2026年5月9日 周五</div>
+        <div className="screen-title">你好 👋</div>
+        <div className="body-text" style={{ marginTop: 4 }}>师傅<strong>下周一到周四</strong>来做饭</div>
+      </div>
+
+      <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+        {/* Today's meals (showing next cook day) */}
+        <section>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div className="section-title">下次开做日</div>
+            <button className="caption" style={{ background: "none", border: "none", color: "#c17f3c", fontWeight: 600, cursor: "pointer" }} onClick={() => onNavigate("plan")}>查看菜单 →</button>
+          </div>
+          {today ? (
+            <div className="card" style={{ padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#c17f3c", marginBottom: 12, letterSpacing: 0.3 }}>{today.date.toUpperCase()}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {["breakfast","lunch","dinner"].filter(meal => ((today.meals || {})[meal] || []).length > 0).map(meal => (
+                  <div key={meal} className="meal-slot">
+                    <div className="meal-slot-label">{MEAL_LABELS[meal]}</div>
+                    {((today.meals || {})[meal] || []).map(id => {
+                      const d = getDishById(dishes, id);
+                      return d ? (
+                        <div key={id} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                          <span style={{ fontSize: 18 }}>{d.image}</span>
+                          <span style={{ fontSize: 13, color: "#1a1714", fontWeight: 500, lineHeight: 1.3 }}>{d.name}</span>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                ))}
+              </div>
+              {today.notes && (
+                <div style={{ marginTop: 10, padding: "10px 12px", background: "#fff8ed", borderRadius: 10, fontSize: 12, color: "#8a6030", lineHeight: 1.4 }}>
+                  📌 {today.notes}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="card">
+              <div className="empty-state" style={{ padding: 32 }}>
+                <div className="empty-icon">📅</div>
+                <div className="section-title">还没有菜单</div>
+                <button className="btn-primary" style={{ marginTop: 8 }} onClick={() => onNavigate("plan")}>生成菜单</button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Quick actions */}
+        <section>
+          <div className="section-title" style={{ marginBottom: 12 }}>快捷操作</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {[
+              { icon: "➕", label: "添加菜品", sub: `已保存 ${dishes.length} 道菜`, action: () => onNavigate("add-dish"), color: "#c17f3c", bg: "#fff8ed" },
+              { icon: "📅", label: "查看菜单", sub: mealPlan ? mealPlan.week_range : "暂无菜单", action: () => onNavigate("plan"), color: "#3b5bdb", bg: "#f0f4ff" },
+              { icon: "🛒", label: "采购清单", sub: `还剩 ${groceryPending} 项`, action: () => onNavigate("grocery"), color: "#2e7d32", bg: "#f0faf0" },
+              { icon: "👨‍🍳", label: "厨师视图", sub: "分享给厨师", action: () => onNavigate("share"), color: "#7b3f9e", bg: "#f8f0ff" },
+            ].map(a => (
+              <button key={a.label} onClick={a.action} style={{ background: a.bg, borderRadius: 18, padding: 16, border: "none", cursor: "pointer", textAlign: "left", WebkitTapHighlightColor: "transparent" }}>
+                <div style={{ fontSize: 26, marginBottom: 6 }}>{a.icon}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: a.color }}>{a.label}</div>
+                <div style={{ fontSize: 12, color: "#9a9590", marginTop: 2 }}>{a.sub}</div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Grocery summary */}
+        <section>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div className="section-title">采购概览</div>
+            <button className="caption" style={{ background: "none", border: "none", color: "#c17f3c", fontWeight: 600, cursor: "pointer" }} onClick={() => onNavigate("grocery")}>查看全部 →</button>
+          </div>
+          <div className="card" style={{ padding: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 13, color: "#5a5550" }}>共 {groceryList?.items?.length} 项</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#2e7d32" }}>{groceryList?.items?.filter(i => i.checked).length || 0} 已购</div>
+            </div>
+            <div style={{ background: "#f5f0ea", borderRadius: 8, height: 6, overflow: "hidden" }}>
+              <div style={{
+                height: "100%",
+                background: "#c17f3c",
+                borderRadius: 8,
+                width: `${((groceryList?.items?.filter(i => i.checked).length || 0) / (groceryList?.items?.length || 1)) * 100}%`,
+                transition: "width 0.3s"
+              }} />
+            </div>
+            <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {Object.entries(groupBy(groceryList?.items?.slice(0, 6) || [], "category")).map(([cat, items]) => (
+                <div key={cat} className="badge badge-category">{items.length} {cat}</div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Dish highlights */}
+        <section>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div className="section-title">我的收藏</div>
+            <button className="caption" style={{ background: "none", border: "none", color: "#c17f3c", fontWeight: 600, cursor: "pointer" }} onClick={() => onNavigate("dishes")}>全部菜品 →</button>
+          </div>
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
+            {dishes.filter(d => d.is_favorite).slice(0, 5).map(d => (
+              <button key={d.id} onClick={() => onNavigate("dish-detail", d.id)} style={{ background: "#fff", borderRadius: 16, padding: 12, border: "none", cursor: "pointer", minWidth: 110, textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", WebkitTapHighlightColor: "transparent", flexShrink: 0 }}>
+                <div style={{ fontSize: 32 }}>{d.image}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1714", marginTop: 6, lineHeight: 1.3 }}>{d.name}</div>
+                <div className="caption" style={{ marginTop: 2 }}>{d.estimated_time}分钟</div>
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+// ─── DISH LIBRARY ─────────────────────────────────────────────────
+function DishLibraryScreen({ dishes, setDishes, onNavigate }) {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All");
+
+  const filtered = dishes.filter(d => {
+    const matchSearch = d.name.toLowerCase().includes(search.toLowerCase());
+    const matchCat = category === "All" || d.category === category;
+    return matchSearch && matchCat;
+  });
+
+  const toggleFavorite = (id) => {
+    setDishes(prev => prev.map(d => d.id === id ? { ...d, is_favorite: !d.is_favorite } : d));
+  };
+
+  return (
+    <div className="screen">
+      <div style={{ padding: "52px 20px 16px" }}>
+        <div className="screen-title">菜品库</div>
+        <div style={{ marginTop: 14 }} className="search-bar">
+          <span>🔍</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="搜索菜品..."
+          />
+          {search && <button className="btn-icon" onClick={() => setSearch("")} style={{ color: "#9a9590", fontSize: 16 }}>✕</button>}
+        </div>
+        <div className="chips-row" style={{ marginTop: 12 }}>
+          {CATEGORIES.map(cat => (
+            <button key={cat} className={`chip ${category === cat ? "chip-active" : "chip-inactive"}`} onClick={() => setCategory(cat)}>
+              {cat}
+            </button>
+          ))}
+        </div>
+        <button className="btn-primary" style={{ width: "100%", marginTop: 14 }} onClick={() => onNavigate("add-dish")}>+ 添加新菜品</button>
+      </div>
+
+      <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {filtered.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">🍽️</div>
+            <div className="section-title">没找到菜品</div>
+            <div className="body-text">换个关键词搜索，或添加新菜品</div>
+            <button className="btn-primary" style={{ marginTop: 8 }} onClick={() => onNavigate("add-dish")}>+ 添加菜品</button>
+          </div>
+        ) : filtered.map(dish => (
+          <button key={dish.id} onClick={() => onNavigate("dish-detail", dish.id)}
+            style={{ background: "#fff", borderRadius: 18, padding: 0, border: "none", cursor: "pointer", textAlign: "left", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", overflow: "hidden", WebkitTapHighlightColor: "transparent" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px" }}>
+              <div style={{ fontSize: 40, width: 56, height: 56, display: "flex", alignItems: "center", justifyContent: "center", background: "#fdf3e7", borderRadius: 14, flexShrink: 0 }}>
+                {dish.image}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#1a1714" }}>{dish.name}</div>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <span className="badge badge-category">{dish.category}</span>
+                  <span className={`badge badge-${dish.difficulty}`}>{dish.difficulty === "easy" ? "简单" : dish.difficulty === "medium" ? "中等" : "较难"}</span>
+                  <span className="caption" style={{ alignSelf: "center" }}>⏱ {dish.estimated_time}分钟</span>
+                </div>
+                {dish.custom_notes.length > 0 && (
+                  <div style={{ fontSize: 12, color: "#c17f3c", marginTop: 5, fontStyle: "italic" }}>
+                    "{dish.custom_notes[0].slice(0, 50)}..."
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={e => { e.stopPropagation(); toggleFavorite(dish.id); }}
+                style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: dish.is_favorite ? "#e53935" : "#d4cdc5", padding: "8px 4px", WebkitTapHighlightColor: "transparent" }}
+              >
+                {dish.is_favorite ? "♥" : "♡"}
+              </button>
+            </div>
+          </button>
+        ))}
+
+      </div>
+    </div>
+  );
+}
+
+// ─── DISH DETAIL ──────────────────────────────────────────────────
+function DishDetailScreen({ dish, onBack, onCookingMode, onEdit, onToggleFavorite, onUpdateImage, chefMode }) {
+  const [activeSection, setActiveSection] = useState("notes");
+  const [showImgPicker, setShowImgPicker] = useState(false);
+
+  const handleImgFile = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { onUpdateImage && onUpdateImage(ev.target.result); setShowImgPicker(false); };
+    reader.readAsDataURL(file);
+  };
+
+  if (!dish) return null;
+
+  const sourceBadge = (type) => {
+    if (type === "youtube") return <span className="badge badge-youtube">▶ YouTube</span>;
+    if (type === "xiaohongshu") return <span className="badge badge-xiaohongshu">📕 小红书</span>;
+    return <span className="badge badge-web">🌐 Web</span>;
+  };
+
+  return (
+    <div className="screen">
+      {/* Image header */}
+      <div style={{ position: "relative" }}>
+        <div onClick={() => !chefMode && setShowImgPicker(true)} style={{ cursor: chefMode ? "default" : "pointer" }}>
+          {dish.imageUrl ? (
+            <div style={{ width: "100%", height: 220, overflow: "hidden" }}>
+              <img src={dish.imageUrl} alt={dish.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          ) : (
+            <div className="dish-image-placeholder" style={{ borderRadius: 0 }}>
+              <span style={{ fontSize: 80 }}>{dish.image}</span>
+            </div>
+          )}
+          {!chefMode && (
+            <div style={{ position: "absolute", bottom: 12, right: 12, background: "rgba(0,0,0,0.45)", borderRadius: 20, padding: "5px 12px", fontSize: 12, color: "#fff", backdropFilter: "blur(4px)" }}>
+              📷 换图
+            </div>
+          )}
+        </div>
+
+        {/* Image picker bottom sheet */}
+        {showImgPicker && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 300 }} onClick={() => setShowImgPicker(false)}>
+            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }} />
+            <div onClick={e => e.stopPropagation()} style={{
+              position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+              width: 375, background: "#fff", borderRadius: "20px 20px 0 0", padding: "20px 20px 48px"
+            }}>
+              <div style={{ width: 36, height: 4, background: "#e0dbd4", borderRadius: 2, margin: "0 auto 20px" }} />
+              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#1a1714" }}>更换菜品图片</div>
+              <label style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #f0ebe3", cursor: "pointer" }}>
+                <span style={{ fontSize: 24 }}>📷</span>
+                <span style={{ fontSize: 15, color: "#1a1714" }}>拍照</span>
+                <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleImgFile} />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #f0ebe3", cursor: "pointer" }}>
+                <span style={{ fontSize: 24 }}>🖼️</span>
+                <span style={{ fontSize: 15, color: "#1a1714" }}>从相册选择</span>
+                <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleImgFile} />
+              </label>
+              {dish.imageUrl && (
+                <button onClick={() => { onUpdateImage && onUpdateImage(null); setShowImgPicker(false); }} style={{
+                  display: "flex", alignItems: "center", gap: 14, padding: "14px 0",
+                  background: "none", border: "none", width: "100%", cursor: "pointer"
+                }}>
+                  <span style={{ fontSize: 24 }}>🗑️</span>
+                  <span style={{ fontSize: 15, color: "#e05a3a" }}>删除图片</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <button onClick={onBack} style={{
+          position: "absolute", top: 52, left: 16,
+          background: "rgba(255,255,255,0.9)", border: "none", borderRadius: 12,
+          width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 18, cursor: "pointer", backdropFilter: "blur(10px)", WebkitTapHighlightColor: "transparent"
+        }}>←</button>
+        {!chefMode && onToggleFavorite && (
+          <button onClick={onToggleFavorite} style={{
+            position: "absolute", top: 52, right: 16,
+            background: "rgba(255,255,255,0.9)", border: "none", borderRadius: 12,
+            width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 20, cursor: "pointer", backdropFilter: "blur(10px)", WebkitTapHighlightColor: "transparent"
+          }}>
+            {dish.is_favorite ? "♥" : "♡"}
+          </button>
+        )}
+      </div>
+
+      {/* Title area */}
+      <div style={{ padding: "20px 20px 0" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#1a1714", letterSpacing: -0.5 }}>{dish.name}</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+              <span className="badge badge-category">{dish.category}</span>
+              <span className={`badge badge-${dish.difficulty}`}>{dish.difficulty === "easy" ? "简单" : dish.difficulty === "medium" ? "中等" : "较难"}</span>
+              <span className="badge" style={{ background: "#f5f0ea", color: "#5a5550" }}>⏱ {dish.estimated_time} 分钟</span>
+              <span className="badge" style={{ background: "#f5f0ea", color: "#5a5550" }}>👤 {dish.servings} 人份</span>
+            </div>
+          </div>
+          {!chefMode && onEdit && (
+            <button onClick={onEdit} style={{
+              background: "#f5f0ea", border: "none", borderRadius: 12,
+              padding: "8px 16px", fontSize: 13, fontWeight: 700, color: "#1a1714",
+              cursor: "pointer", flexShrink: 0, marginLeft: 12
+            }}>编辑</button>
+          )}
+        </div>
+
+        {/* Metadata */}
+        <div style={{ display: "flex", gap: 16, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f5f0ea" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#c17f3c" }}>{dish.cook_count}</div>
+            <div className="caption">已做次数</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#c17f3c" }}>{dish.ingredients.length}</div>
+            <div className="caption">食材</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#c17f3c" }}>{dish.steps.length}</div>
+            <div className="caption">步骤</div>
+          </div>
+          <div style={{ flex: 1, textAlign: "right" }}>
+            <div style={{ fontSize: 13, color: "#9a9590" }}>上次烹饪</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1714" }}>{dish.last_cooked_date || "—"}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section tabs */}
+      <div style={{ padding: "16px 20px 0", display: "flex", gap: 0, borderBottom: "1px solid #f0ebe3", overflowX: "auto" }}>
+        {[
+          { id: "notes", label: "我的备注" },
+          { id: "ingredients", label: "食材" },
+          { id: "steps", label: "步骤" },
+          { id: "sources", label: "参考来源" },
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setActiveSection(tab.id)} style={{
+            background: "none", border: "none", padding: "10px 16px", cursor: "pointer",
+            fontSize: 14, fontWeight: 600, color: activeSection === tab.id ? "#c17f3c" : "#9a9590",
+            borderBottom: activeSection === tab.id ? "2px solid #c17f3c" : "2px solid transparent",
+            whiteSpace: "nowrap", WebkitTapHighlightColor: "transparent"
+          }}>{tab.label}</button>
+        ))}
+      </div>
+
+      {/* Section content */}
+      <div style={{ padding: "20px 20px" }}>
+
+        {activeSection === "notes" && (
+          <div>
+            {dish.custom_notes.length === 0 ? (
+              <div className="empty-state" style={{ padding: "40px 0" }}>
+                <div className="empty-icon">📝</div>
+                <div className="body-text">还没有个人备注。<br />添加你的偏好要求。</div>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, color: "#9a9590", marginBottom: 12 }}>这是你对这道菜的个人要求</div>
+                {dish.custom_notes.map((note, i) => (
+                  <div key={i} className="note-card">
+                    <div style={{ fontSize: 15, color: "#3d2200", lineHeight: 1.5 }}>{note}</div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+
+        {activeSection === "ingredients" && (
+          <div>
+            <div style={{ fontSize: 13, color: "#9a9590", marginBottom: 8 }}>{dish.servings} 人份</div>
+            {dish.ingredients.map((ing, i) => (
+              <div key={i} className="ingredient-row">
+                <div style={{ width: 8, height: 8, borderRadius: 4, background: ing.optional ? "#d4cdc5" : "#c17f3c", flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1, fontSize: 15, color: "#1a1714" }}>{ing.name}{ing.note && <span style={{ fontSize: 11, color: "#c17f3c", marginLeft: 4, fontWeight: 500 }}>特殊调料</span>}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#5a5550" }}>{ing.quantity} {ing.unit}</div>
+                {ing.optional && <span className="caption" style={{ color: "#b0a89e" }}>可选</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeSection === "steps" && (
+          <div>
+            {dish.steps.map((step, i) => (
+              <div key={i} style={{ display: "flex", gap: 14, marginBottom: 20 }}>
+                <div className="step-number">{step.step_number}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, color: "#1a1714", lineHeight: 1.6 }}>{step.instruction}</div>
+                  {step.tip && (
+                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#fdf3e7", borderRadius: 10, fontSize: 13, color: "#8a6030", lineHeight: 1.4 }}>
+                      💡 {step.tip}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            <button className="btn-primary" onClick={onCookingMode} style={{ marginTop: 8 }}>
+              🍳 开始烹饪模式
+            </button>
+          </div>
+        )}
+
+        {activeSection === "sources" && (
+          <div>
+            {dish.source_links.length === 0 ? (
+              <div className="empty-state" style={{ padding: "40px 0" }}>
+                <div className="empty-icon">🔗</div>
+                <div className="body-text">暂无参考来源。<br />可添加 YouTube、网页或小红书链接。</div>
+              </div>
+            ) : dish.source_links.map((src, i) => (
+              <div key={i} className="source-card" style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 28 }}>{src.type === "youtube" ? "▶" : src.type === "xiaohongshu" ? "📕" : "🌐"}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    {sourceBadge(src.type)}
+                    {src.used_in_my_version && <span className="badge" style={{ background: "#f0faf0", color: "#2e7d32" }}>✓ 我用了这个方法</span>}
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1714" }}>{src.title}</div>
+                  <div className="caption" style={{ marginTop: 2 }}>作者：{src.creator}</div>
+                  {src.note && <div style={{ fontSize: 13, color: "#8a6030", marginTop: 6, fontStyle: "italic" }}>"{src.note}"</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── EDIT DISH SCREEN ────────────────────────────────────────────
+function EditDishScreen({ dish, onBack, onSave, showToast }) {
+  const [form, setForm] = useState({ ...dish });
+  const [imageUrl, setImageUrl] = useState(dish.imageUrl || "");
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [stepsMode, setStepsMode] = useState("structured");
+  const [pasteText, setPasteText] = useState("");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showAiPrompt, setShowAiPrompt] = useState(false);
+
+  const update = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  const handleImageFile = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { setImageUrl(ev.target.result); setShowImagePicker(false); };
+    reader.readAsDataURL(file);
+  };
+
+  const GEMINI_KEY = "AIzaSyC1fThUx6x_BBDsuDvY2YscOixmbC20tz0";
+  const callGemini = async (prompt) => {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+    );
+    if (!res.ok) throw new Error(`Gemini error ${res.status}`);
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  };
+
+  const handleAiGenerate = async (promptOverride) => {
+    const name = promptOverride || form.name || "家常菜";
+    setAiLoading(true);
+    try {
+      const raw = await callGemini(
+        `你是一个中餐烹饪助手。请根据菜名"${name}"生成一份家庭烹饪食谱。
+返回严格的JSON格式，不要加任何解释或markdown代码块：
+{"category":"必须是以下之一：猪肉/牛肉/羊肉/鸡肉/鸭肉/海鲜/蔬菜/豆腐/主食/汤品","ingredients":[{"name":"食材名","quantity":"用量","unit":"单位","unusual":false}],"steps":[{"step_number":1,"instruction":"步骤说明","tip":"小技巧或空字符串"}]}
+食材只列需要购买的原材料，每个是单独一个词（不是短语）。不要包含盐糖油酱油生抽老抽料酒味精鸡精淀粉香油等家庭常备调料。鱼露豆豉豆瓣酱椰浆咖喱等特殊调料需包含并unusual设为true。步骤3-6个，每步不超过60字。`
+      );
+      const _s1=raw.indexOf("{"),_e1=raw.lastIndexOf("}");
+      const json = JSON.parse(_s1>-1&&_e1>-1 ? raw.slice(_s1,_e1+1) : "{}");
+      if (json.steps) update("steps", json.steps.map((s, i) => ({ step_number: i + 1, instruction: s.instruction || "", tip: s.tip || "" })));
+      if (json.ingredients) update("ingredients", json.ingredients.map(ing => ({ name: ing.name, quantity: ing.quantity || "", unit: ing.unit || "", optional: false, ...(ing.unusual ? { note: "特殊调料" } : {}) })));
+      if (json.category) { const cat = normalizeCategory(json.category); update("category", cat); update("image", CATEGORY_EMOJI[cat] || "🍳"); }
+      setStepsMode("structured");
+      showToast("✨ AI 已填写步骤、食材、分类");
+    } catch (e) {
+      console.error("AI generate error, falling back:", e);
+      const result = generateRecipeFromName(name);
+      update("steps", result.steps);
+      update("ingredients", result.ingredients);
+      if (result.category) { update("category", result.category); if (CATEGORY_EMOJI[result.category]) update("image", CATEGORY_EMOJI[result.category]); }
+      setStepsMode("structured");
+      showToast("✓ 已生成（离线模式）");
+    }
+    setAiLoading(false);
+  };
+
+  const handlePasteConvert = () => {
+    if (!pasteText.trim()) return;
+    const parsed = parseStepsFromText(pasteText);
+    if (!parsed.length) return;
+    update("steps", parsed);
+    setStepsMode("structured");
+    setPasteText("");
+    showToast(`✓ 已解析 ${parsed.length} 个步骤`);
+  };
+
+  const SectionHeader = ({ label, sub }) => (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12, marginTop: 28 }}>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1714" }}>{label}</div>
+      {sub && <div style={{ fontSize: 12, color: "#9a9590" }}>{sub}</div>}
+    </div>
+  );
+
+  return (
+    <div className="screen" style={{ overflowY: "auto" }}>
+      {/* Sticky header */}
+      <div style={{ padding: "52px 20px 16px", position: "sticky", top: 0, background: "#faf7f2", zIndex: 10, paddingBottom: 16, borderBottom: "1px solid #f0ebe3" }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button className="back-btn" onClick={onBack} style={{ margin: 0 }}>← 取消</button>
+        </div>
+        <div className="screen-title" style={{ marginTop: 10 }}>编辑菜品</div>
+      </div>
+
+      <div style={{ padding: "0 20px 60px" }}>
+
+        {/* 基本信息 */}
+        <SectionHeader label="基本信息" />
+
+        <div className="form-section">
+          <label className="form-label">菜品名称</label>
+          <input className="input-field" value={form.name} onChange={e => update("name", e.target.value)} placeholder="菜品名称..." />
+        </div>
+
+        <div className="form-section">
+          <label className="form-label">图片（可选）</label>
+          <div onClick={() => setShowImagePicker(true)} style={{
+            width: 88, height: 88, borderRadius: 16, overflow: "hidden",
+            background: "#f5f0ea", border: "2px dashed #d4cdc5", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", position: "relative"
+          }}>
+            {imageUrl ? (
+              <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => setImageUrl("")} />
+            ) : (
+              <span style={{ fontSize: 40 }}>{form.image}</span>
+            )}
+            <div style={{ position: "absolute", bottom: 4, right: 4, background: "rgba(0,0,0,0.5)", borderRadius: 8, padding: "2px 6px", fontSize: 10, color: "#fff" }}>换图</div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <label className="form-label">分类</label>
+          <div className="chips-row">
+            {VALID_CATEGORIES.map(c => (
+              <button key={c} className={`chip ${form.category === c ? "chip-active" : "chip-inactive"}`}
+                onClick={() => { update("category", c); update("image", CATEGORY_EMOJI[c] || form.image); }}>{CATEGORY_EMOJI[c]} {c}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }} className="form-section">
+          <div>
+            <label className="form-label">人份</label>
+            <input className="input-field" type="number" value={form.servings} onChange={e => update("servings", +e.target.value)} min={1} />
+          </div>
+          <div>
+            <label className="form-label">时间(分钟)</label>
+            <input className="input-field" type="number" value={form.estimated_time} onChange={e => update("estimated_time", +e.target.value)} min={5} />
+          </div>
+          <div>
+            <label className="form-label">难度</label>
+            <select className="input-field" value={form.difficulty} onChange={e => update("difficulty", e.target.value)}>
+              <option value="easy">简单</option>
+              <option value="medium">中等</option>
+              <option value="hard">较难</option>
+            </select>
+          </div>
+        </div>
+
+        {/* 食材 */}
+        <SectionHeader label="食材" />
+        {form.ingredients.map((ing, i) => (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 56px 56px 32px", gap: 6, marginBottom: 8, alignItems: "center" }}>
+            <input className="input-field" placeholder="食材名称" value={ing.name} onChange={e => {
+              const arr = [...form.ingredients]; arr[i] = { ...arr[i], name: e.target.value }; update("ingredients", arr);
+            }} />
+            <input className="input-field" placeholder="用量" value={ing.quantity} style={{ textAlign: "center" }} onChange={e => {
+              const arr = [...form.ingredients]; arr[i] = { ...arr[i], quantity: e.target.value }; update("ingredients", arr);
+            }} />
+            <input className="input-field" placeholder="单位" value={ing.unit} style={{ textAlign: "center" }} onChange={e => {
+              const arr = [...form.ingredients]; arr[i] = { ...arr[i], unit: e.target.value }; update("ingredients", arr);
+            }} />
+            <button className="btn-icon" style={{ color: "#d4cdc5", padding: 4 }}
+              onClick={() => update("ingredients", form.ingredients.filter((_, j) => j !== i))}>✕</button>
+          </div>
+        ))}
+        <button className="btn-secondary" style={{ marginTop: 4 }} onClick={() => update("ingredients", [...form.ingredients, { name: "", quantity: "", unit: "", optional: false }])}>+ 添加食材</button>
+
+        {/* 烹饪步骤 */}
+        <SectionHeader label="烹饪步骤" />
+        <div style={{ background: "#fff", borderRadius: 16, padding: 14, marginBottom: 16, border: "1px solid #f0ebe3" }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: showAiPrompt ? 12 : 0 }}>
+            <button onClick={() => { setShowAiPrompt(false); handleAiGenerate(); }} disabled={aiLoading} style={{
+              flex: 1, background: aiLoading ? "#f5f0ea" : "#1a1714", border: "none", borderRadius: 12,
+              padding: "10px 8px", color: aiLoading ? "#9a9590" : "#fff", fontSize: 12, fontWeight: 700,
+              cursor: aiLoading ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5
+            }}>
+              {aiLoading ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⟳</span> 生成中...</> : <><span>✨</span> AI 重新生成</>}
+            </button>
+            <button onClick={() => setShowAiPrompt(v => !v)} style={{
+              flex: 1, background: showAiPrompt ? "#fdf3e7" : "#f5f0ea", border: showAiPrompt ? "1.5px solid #c17f3c" : "none",
+              borderRadius: 12, padding: "10px 8px", color: showAiPrompt ? "#c17f3c" : "#5a5550",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5
+            }}><span>💬</span> 描述</button>
+            <button onClick={() => { setStepsMode(m => m === "paste" ? "structured" : "paste"); setShowAiPrompt(false); }} style={{
+              flex: 1, background: stepsMode === "paste" ? "#fdf3e7" : "#f5f0ea",
+              border: stepsMode === "paste" ? "1.5px solid #c17f3c" : "none",
+              borderRadius: 12, padding: "10px 8px", color: stepsMode === "paste" ? "#c17f3c" : "#5a5550",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5
+            }}><span>📋</span> 粘贴</button>
+          </div>
+          {showAiPrompt && (
+            <div style={{ marginTop: 8 }}>
+              <textarea className="input-field" value={aiPrompt} onChange={e => setAiPrompt(e.target.value)}
+                placeholder="描述要求，例如：湖南风味，少油，最后大火收汁..." style={{ minHeight: 72, fontSize: 13 }} />
+              <button onClick={() => handleAiGenerate(aiPrompt || form.name)} disabled={aiLoading} style={{
+                marginTop: 8, background: "#c17f3c", border: "none", borderRadius: 10,
+                padding: "10px 0", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", width: "100%"
+              }}>{aiLoading ? "生成中..." : "✨ 根据描述生成"}</button>
+            </div>
+          )}
+        </div>
+
+        {stepsMode === "paste" && (
+          <div style={{ marginBottom: 16 }}>
+            <textarea className="input-field" value={pasteText} onChange={e => setPasteText(e.target.value)}
+              placeholder={"1. 第一步...\n2. 第二步..."} style={{ minHeight: 120, fontSize: 13, lineHeight: 1.6 }} />
+            <button onClick={handlePasteConvert} style={{
+              marginTop: 8, background: "#c17f3c", border: "none", borderRadius: 10,
+              padding: "10px 0", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", width: "100%"
+            }}>✓ 转换为步骤</button>
+          </div>
+        )}
+
+        {stepsMode === "structured" && (
+          <div>
+            {form.steps.length > 0 && (
+              <div style={{ fontSize: 12, color: "#9a9590", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
+                <span>共 {form.steps.length} 个步骤</span>
+                <button onClick={() => update("steps", [{ step_number: 1, instruction: "", tip: "" }])}
+                  style={{ background: "none", border: "none", color: "#e53935", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>清空</button>
+              </div>
+            )}
+            {form.steps.map((s, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+                <div className="step-number" style={{ marginTop: 2, flexShrink: 0 }}>{i + 1}</div>
+                <div style={{ flex: 1 }}>
+                  <textarea className="input-field" placeholder="步骤说明..." value={s.instruction} onChange={e => {
+                    const arr = [...form.steps]; arr[i] = { ...arr[i], instruction: e.target.value }; update("steps", arr);
+                  }} style={{ minHeight: 60, fontSize: 14 }} />
+                  <input className="input-field" placeholder="💡 小贴士（选填）" value={s.tip || ""} onChange={e => {
+                    const arr = [...form.steps]; arr[i] = { ...arr[i], tip: e.target.value }; update("steps", arr);
+                  }} style={{ marginTop: 6, fontSize: 13 }} />
+                </div>
+                <button className="btn-icon" style={{ color: "#d4cdc5", alignSelf: "flex-start", marginTop: 2, padding: 4 }}
+                  onClick={() => update("steps", form.steps.filter((_, j) => j !== i))}>✕</button>
+              </div>
+            ))}
+            <button className="btn-secondary" onClick={() => update("steps", [...form.steps, { step_number: form.steps.length + 1, instruction: "", tip: "" }])}>+ 添加步骤</button>
+          </div>
+        )}
+
+        {/* 个人特殊要求 */}
+        <SectionHeader label="个人特殊要求" sub="厨师视图高亮显示" />
+        <div style={{ background: "#fff8ed", borderRadius: 12, padding: "10px 14px", marginBottom: 16, borderLeft: "4px solid #c17f3c" }}>
+          <div style={{ fontSize: 12, color: "#8a6030" }}>厨师必须严格按照执行</div>
+        </div>
+        {form.custom_notes.map((note, i) => (
+          <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            <div style={{ width: 4, background: "#c17f3c", borderRadius: 2, flexShrink: 0, marginTop: 4, marginBottom: 4 }} />
+            <textarea className="input-field" value={note} onChange={e => {
+              const notes = [...form.custom_notes]; notes[i] = e.target.value; update("custom_notes", notes);
+            }} placeholder="例如：老抽3勺，喜欢颜色深..." style={{ flex: 1, minHeight: 60 }} />
+            {form.custom_notes.length > 1 && (
+              <button className="btn-icon" style={{ color: "#d4cdc5", alignSelf: "flex-start", marginTop: 4, padding: 4 }}
+                onClick={() => update("custom_notes", form.custom_notes.filter((_, j) => j !== i))}>✕</button>
+            )}
+          </div>
+        ))}
+        <button className="btn-secondary" onClick={() => update("custom_notes", [...form.custom_notes, ""])}>+ 再加一条</button>
+
+      </div>
+
+      {/* Image picker bottom sheet */}
+      {showImagePicker && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200 }} onClick={() => setShowImagePicker(false)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }} />
+          <div onClick={e => e.stopPropagation()} style={{
+            position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+            width: 375, background: "#fff", borderRadius: "20px 20px 0 0", padding: "20px 20px 48px"
+          }}>
+            <div style={{ width: 36, height: 4, background: "#e0dbd4", borderRadius: 2, margin: "0 auto 20px" }} />
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#1a1714" }}>更换图片</div>
+            <label style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #f0ebe3", cursor: "pointer" }}>
+              <span style={{ fontSize: 24 }}>📷</span><span style={{ fontSize: 15, color: "#1a1714" }}>拍照</span>
+              <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleImageFile} />
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #f0ebe3", cursor: "pointer" }}>
+              <span style={{ fontSize: 24 }}>🖼️</span><span style={{ fontSize: 15, color: "#1a1714" }}>从相册选择</span>
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageFile} />
+            </label>
+            {imageUrl && (
+              <button onClick={() => { setImageUrl(""); setShowImagePicker(false); }} style={{
+                display: "flex", alignItems: "center", gap: 14, padding: "14px 0", background: "none", border: "none", width: "100%", cursor: "pointer"
+              }}>
+                <span style={{ fontSize: 24 }}>🗑️</span><span style={{ fontSize: 15, color: "#e05a3a" }}>删除图片</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+
+      {/* Save button fixed at bottom */}
+      <div style={{ padding: "12px 20px 36px", borderTop: "1px solid #f0ebe3", background: "#faf7f2", position: "sticky", bottom: 0 }}>
+        <button className="btn-primary" style={{ width: "100%", padding: "14px", fontSize: 15, fontWeight: 700 }} onClick={() => {
+          if (!form.name.trim()) { showToast("请先填写菜名"); return; }
+          onSave({ ...form, imageUrl: imageUrl || null });
+          showToast("✓ 已保存修改");
+        }}>保存修改 ✓</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── COOKING MODE ─────────────────────────────────────────────────
+function CookingModeScreen({ dish, onClose }) {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  if (!dish) return null;
+
+  const step = dish.steps[currentStep];
+  const isLast = currentStep === dish.steps.length - 1;
+
+  return (
+    <div className="cooking-mode">
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
+        <div>
+          <div style={{ fontSize: 12, color: "#8a7060", letterSpacing: 1 }}>烹饪模式</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginTop: 4 }}>{dish.name}</div>
+        </div>
+        <button onClick={onClose} style={{ background: "#3a3530", border: "none", borderRadius: 12, padding: "8px 14px", color: "#9a8a7a", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>完成</button>
+      </div>
+
+      {/* My notes (always visible in cooking mode) */}
+      {dish.custom_notes.length > 0 && (
+        <div style={{ background: "#3d2e1a", borderRadius: 16, padding: 14, marginBottom: 24, borderLeft: "3px solid #c17f3c" }}>
+          <div style={{ fontSize: 11, color: "#c17f3c", fontWeight: 700, letterSpacing: 0.5, marginBottom: 8 }}>我的备注</div>
+          {dish.custom_notes.slice(0, 2).map((note, i) => (
+            <div key={i} style={{ fontSize: 13, color: "#e0c090", lineHeight: 1.5, marginBottom: 4 }}>• {note}</div>
+          ))}
+        </div>
+      )}
+
+      {/* Progress */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+        {dish.steps.map((_, i) => (
+          <button key={i} onClick={() => setCurrentStep(i)} style={{
+            flex: 1, height: 4, borderRadius: 2, border: "none", cursor: "pointer",
+            background: i <= currentStep ? "#c17f3c" : "#3a3530",
+            transition: "background 0.2s"
+          }} />
+        ))}
+      </div>
+
+      {/* Current step */}
+      <div className="cooking-step-card current">
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 12, background: "#c17f3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#fff" }}>{step.step_number}</div>
+          <div style={{ fontSize: 12, color: "#c17f3c", fontWeight: 600, letterSpacing: 0.5 }}>当前步骤</div>
+        </div>
+        <div style={{ fontSize: 20, color: "#fff", lineHeight: 1.6, fontWeight: 500 }}>{step.instruction}</div>
+        {step.tip && (
+          <div style={{ marginTop: 16, padding: "12px 14px", background: "#5a3a14", borderRadius: 12, fontSize: 14, color: "#f0c070", lineHeight: 1.4 }}>
+            💡 {step.tip}
+          </div>
+        )}
+      </div>
+
+      {/* Prev / Next */}
+      <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+        <button
+          onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+          disabled={currentStep === 0}
+          style={{ flex: 1, background: "#2a2520", border: "none", borderRadius: 14, padding: 16, fontSize: 15, fontWeight: 600, color: currentStep === 0 ? "#4a4540" : "#c0a070", cursor: currentStep === 0 ? "default" : "pointer" }}
+        >← 上一步</button>
+        <button
+          onClick={() => isLast ? onClose() : setCurrentStep(currentStep + 1)}
+          style={{ flex: 1, background: "#c17f3c", border: "none", borderRadius: 14, padding: 16, fontSize: 15, fontWeight: 600, color: "#fff", cursor: "pointer" }}
+        >{isLast ? "完成！🎉" : "下一步 →"}</button>
+      </div>
+
+      {/* Upcoming */}
+      {!isLast && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 12, color: "#6a5a4a", fontWeight: 600, letterSpacing: 0.5, marginBottom: 10 }}>接下来</div>
+          {dish.steps.slice(currentStep + 1, currentStep + 3).map((s, i) => (
+            <div key={i} className="cooking-step-card" style={{ marginBottom: 10, opacity: 0.7 }}>
+              <div style={{ fontSize: 12, color: "#8a7a6a", marginBottom: 6 }}>第 {s.step_number} 步</div>
+              <div style={{ fontSize: 14, color: "#c0b0a0", lineHeight: 1.5 }}>{s.instruction}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── AI RECIPE GENERATOR (simulated) ─────────────────────────────
+function generateRecipeFromName(name) {
+  // keyword → { steps, ings, mainIng, category }
+  const templates = {
+    "红烧": {
+      category: "猪肉",
+      mainIng: [name.includes("鱼") ? "鱼 1条" : name.includes("鸡") ? "鸡腿 4只" : "五花肉 600g"],
+      steps: ["食材冷水焯水去腥，捞出擦干。","干锅炒冰糖至琥珀色，下主料翻炒裹色。","加料酒、老抽、生抽、香料，加水没过食材。","大火烧开转小火盖盖焖50分钟。","开盖大火收汁至浓稠发亮，出锅。"],
+      ings: ["老抽 2勺","生抽 1勺","冰糖 30 g","绍兴黄酒 2勺","八角 1颗","姜 3片","葱 2根"]
+    },
+    "清蒸": {
+      category: "海鲜",
+      mainIng: [name.includes("鸡") ? "整鸡 1只" : "鲈鱼 1条（约600g）"],
+      steps: ["主料处理干净，打花刀或切块。","蒸锅水烧开，大火蒸8-12分钟。","倒掉蒸出的腥水。","调汁：生抽+糖，淋在食材上，铺葱姜丝。","烧热油淋上去，立刻上桌。"],
+      ings: ["生抽 3勺","糖 1茶匙","姜 4片","葱 2根","食用油 3勺"]
+    },
+    "炒": {
+      category: name.includes("牛") ? "牛肉" : name.includes("鸡") ? "鸡肉" : name.includes("虾") || name.includes("鱼") ? "海鲜" : name.includes("豆腐") ? "豆腐" : name.includes("菜") || name.includes("瓜") || name.includes("茄") ? "蔬菜" : "猪肉",
+      mainIng: [],
+      steps: ["主料切好，加生抽、淀粉腌10分钟。","配料切好备用。","锅烧热下油，大火翻炒主料至变色，盛出。","下配料爆炒，加调料。","主料回锅，大火翻炒均匀，出锅。"],
+      ings: ["生抽 2勺","淀粉 1茶匙","蒜 3瓣","姜 2片","食用油 2勺","盐 适量"]
+    },
+    "炖": {
+      category: name.includes("鸡") ? "鸡肉" : name.includes("鱼") ? "海鲜" : "猪肉",
+      mainIng: [],
+      steps: ["主料焯水去腥，冲洗干净。","下油炒香葱姜蒜，加主料翻炒。","加水或高汤没过食材，加调料。","大火烧开转小火炖40-60分钟。","调味收汁，出锅。"],
+      ings: ["生抽 2勺","老抽 1勺","料酒 2勺","葱 2根","姜 3片","盐 适量"]
+    },
+    "凉拌": {
+      category: name.includes("鸡") ? "鸡肉" : "蔬菜",
+      mainIng: [],
+      steps: ["主料处理好（焯水或直接用）。","加盐腌10分钟，控干水分。","调拌汁：生抽、醋、糖、蒜末、辣椒油。","浇在食材上拌匀。","冷藏15分钟后上桌。"],
+      ings: ["生抽 1勺","米醋 2勺","糖 1茶匙","蒜 3瓣","辣椒油 1茶匙","麻油 0.5茶匙"]
+    },
+    "烤": {
+      category: name.includes("鱼") ? "海鲜" : name.includes("鸡") ? "鸡肉" : name.includes("牛") ? "牛肉" : "猪肉",
+      mainIng: [],
+      steps: ["主料腌制（酱油、蒜、香料）30分钟。","烤箱预热200度或空气炸锅备用。","主料表面刷油。","烤15-20分钟，翻面再烤5-10分钟。","出锅撒葱花或香菜。"],
+      ings: ["生抽 2勺","蒜 3瓣","蜂蜜 1勺","黑胡椒 适量","食用油 1勺"]
+    },
+    "汤": {
+      category: "汤品",
+      mainIng: [],
+      steps: ["主料处理干净，冷水下锅焯水。","重新加冷水，大火烧开撇去浮沫。","转小火慢炖60-90分钟。","加盐调味，撒葱花出锅。"],
+      ings: ["姜 3片","葱 2根","料酒 1勺","盐 适量","白胡椒粉 少许"]
+    },
+  };
+
+  // category inference from name keywords (runs even without template match)
+  function inferCategory(n) {
+    if (/猪|排骨|五花|猪肉|猪蹄|肘子|猪手|回锅|腊肉|咸肉|猪杂/.test(n)) return "猪肉";
+    if (/牛|牛肉|牛腩|牛排|牛杂|牛筋/.test(n)) return "牛肉";
+    if (/鸡|鸭|鹅|乌鸡|童子鸡/.test(n)) return "鸡肉";
+    if (/鱼|虾|蟹|蚝|蛤|海鲜|龙虾|扇贝|螺|贝|鱿|墨鱼|章鱼|鲍|海参|生蚝|田螺|花甲|蛏|蛤蜊|皮皮虾|濑尿虾|蒸蟹|鲫鱼|鲈鱼|带鱼|鳕鱼|三文鱼/.test(n)) return "海鲜";
+    if (/豆腐|豆干|腐竹|豆皮|千张|老豆腐|嫩豆腐/.test(n)) return "豆腐";
+    if (/汤|羹|炖盅|煲/.test(n)) return "汤品";
+    if (/饭|面|饺|包|饼|粥|馄饨|粉|米|炒饭|拌面|烩饭|炒面/.test(n)) return "主食";
+    if (/菜|瓜|茄|笋|蒜|葱|萝卜|土豆|番茄|西红柿|花椰菜|西兰花|菠菜|芹菜|韭菜|冬瓜|苦瓜|辣椒|玉米|藕|莲藕|蘑菇|香菇|木耳/.test(n)) return "蔬菜";
+    return null;
+  }
+
+  const defaultTemplate = {
+    category: null,
+    mainIng: [],
+    steps: ["处理食材，清洗切配备用。","起锅烧油，爆香葱姜蒜。","下主料翻炒或焖煮。","加调味料（生抽、盐、料酒）调味。","出锅前大火收汁，装盘。"],
+    ings: ["生抽 2勺","盐 适量","食用油 2勺","葱 2根","姜 2片"]
+  };
+
+  let tpl = defaultTemplate;
+  for (const key of Object.keys(templates)) {
+    if (name.includes(key)) { tpl = templates[key]; break; }
+  }
+
+  const category = tpl.category || inferCategory(name) || "猪肉";
+  const allIngs = [...(tpl.mainIng || []), ...tpl.ings];
+
+  return {
+    category,
+    steps: tpl.steps.map((instruction, i) => ({ step_number: i + 1, instruction, tip: "" })),
+    ingredients: allIngs.map(s => {
+      const parts = s.split(" ");
+      return { name: parts[0], quantity: parts[1] || "", unit: parts[2] || "", optional: false };
+    })
+  };
+}
+
+function parseStepsFromText(text) {
+  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  return lines.map((line, i) => ({
+    step_number: i + 1,
+    instruction: line.replace(/^[\d]+[\.、。\)）\s]+/, "").trim(),
+    tip: ""
+  })).filter(s => s.instruction.length > 0);
+}
+
+// ─── ADD DISH SCREEN ──────────────────────────────────────────────
+function AddDishScreen({ onBack, onSave, showToast }) {
+  // page: 0=基本信息, 1=步骤, 2=食材&备注
+  const [page, setPage] = useState(0);
+  const [form, setForm] = useState({
+    name: "", category: "猪肉", servings: 2, estimated_time: 30, difficulty: "easy",
+    image: "🥩", custom_notes: [""], ingredients: [], steps: [], source_links: []
+  });
+  const [stepsMode, setStepsMode] = useState("structured");
+  const [pasteText, setPasteText] = useState("");
+  const [freeText, setFreeText] = useState("");
+  const [optimizing, setOptimizing] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [ingLoading, setIngLoading] = useState(false);
+  const [importTab, setImportTab] = useState("text"); // "url" | "text"
+  const [importUrl, setImportUrl] = useState("");
+  const [importFreeText, setImportFreeText] = useState("");
+  const [importParsing, setImportParsing] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+
+  const update = (key, val) => setForm(f => ({ ...f, [key]: val }));
+  const pages = ["基本信息", "步骤", "食材 & 备注"];
+
+  const handleImageFile = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { setImageUrl(ev.target.result); setShowImagePicker(false); };
+    reader.readAsDataURL(file);
+  };
+
+  const autoPopulateFromSteps = (steps) => {
+    if (!steps || steps.length === 0) return;
+    const text = steps.map(s => s.instruction + " " + (s.tip || "")).join(" ");
+    const timeMatches = [...text.matchAll(/(\d+)\s*(?:分钟|mins?)/g)].map(m => parseInt(m[1]));
+    const explicitTime = timeMatches.length > 0 ? timeMatches.reduce((a, b) => a + b, 0) : 0;
+    const guessedTime = steps.length <= 3 ? 20 : steps.length <= 5 ? 35 : 50;
+    const estimatedTime = explicitTime > 0 ? Math.min(explicitTime + 10, 180) : guessedTime;
+    const hardKeywords = /腌制|焯水|炖|煨|发面|和面|醒发|卤水|高压锅/;
+    const medKeywords = /翻炒|收汁|焖|蒸|炸|烤|勾芡|火候/;
+    const difficulty = (hardKeywords.test(text) && steps.length >= 5) ? "hard"
+      : (medKeywords.test(text) || steps.length >= 4) ? "medium" : "easy";
+    update("estimated_time", estimatedTime);
+    update("difficulty", difficulty);
+  };
+
+  const GEMINI_KEY = "AIzaSyC1fThUx6x_BBDsuDvY2YscOixmbC20tz0";
+  const callGemini = async (prompt) => {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      }
+    );
+    if (!res.ok) throw new Error(`Gemini error ${res.status}`);
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  };
+
+  const handleAiGenerate = async (promptOverride) => {
+    const name = promptOverride || form.name.trim() || "家常菜";
+    setAiLoading(true);
+    try {
+      const raw = await callGemini(
+        `你是一个中餐烹饪助手。请根据菜名"${name}"生成一份家庭烹饪食谱。
+返回严格的JSON格式，不要加任何解释或markdown代码块：
+{
+  "category": "必须是以下之一：猪肉/牛肉/羊肉/鸡肉/鸭肉/海鲜/蔬菜/豆腐/主食/汤品（田螺蛤蜊虾蟹鱼等水产归海鲜）",
+  "ingredients": [{"name":"食材名","quantity":"用量","unit":"单位"}],
+  "steps": [{"step_number":1,"instruction":"步骤说明","tip":"小技巧，没有就留空"}]
+}
+食材只列需要购买的原材料，每个是单独一个词（不是短语）。不要包含盐糖油酱油生抽老抽料酒味精鸡精淀粉香油等家庭常备调料。鱼露豆豉豆瓣酱椰浆咖喱等特殊调料需包含。步骤3-6个，每步不超过60字。`
+      );
+      const _s2=raw.indexOf("{"),_e2=raw.lastIndexOf("}");
+      const json = JSON.parse(_s2>-1&&_e2>-1 ? raw.slice(_s2,_e2+1) : "{}");
+      const newSteps = json.steps ? json.steps.map((s, i) => ({ step_number: i + 1, instruction: s.instruction || "", tip: s.tip || "" })) : [];
+      if (newSteps.length) { update("steps", newSteps); autoPopulateFromSteps(newSteps); }
+      if (json.ingredients) update("ingredients", json.ingredients.map(ing => ({ name: ing.name, quantity: ing.quantity || "", unit: ing.unit || "", optional: false })));
+      if (json.category) { const cat = normalizeCategory(json.category); update("category", cat); update("image", CATEGORY_EMOJI[cat] || "🍳"); }
+      setStepsMode("structured");
+      showToast("✨ AI 已生成步骤和食材");
+    } catch (e) {
+      console.error("AI generate error, falling back:", e);
+      const result = generateRecipeFromName(name);
+      update("steps", result.steps);
+      update("ingredients", result.ingredients);
+      if (result.category) { update("category", result.category); if (CATEGORY_EMOJI[result.category]) update("image", CATEGORY_EMOJI[result.category]); }
+      setStepsMode("structured");
+      showToast("✓ 已生成（离线模式）");
+    }
+    setAiLoading(false);
+  };
+
+  const handlePasteConvert = () => {
+    if (!pasteText.trim()) return;
+    const parsed = parseStepsFromText(pasteText);
+    if (!parsed.length) return;
+    update("steps", parsed);
+    setStepsMode("structured");
+    setPasteText("");
+    showToast(`✓ 已解析 ${parsed.length} 个步骤`);
+  };
+
+  const parseRecipeFromText = (rawText) => {
+    const lines = rawText.split(/\n+/).map(l => l.trim()).filter(Boolean);
+    // Dish name
+    const descPattern = /这样做|真的|太[好吃下饭香]|第一次|怎么|如何|教你|超级|真香|！|‼|做法|步骤|方法|食材|原料|用料|注意|小贴士|tips/i;
+    let name = "";
+    for (const line of lines) {
+      const clean = line.replace(/[#！!\s\-—–_·•※]/g, "").replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "");
+      if (clean.length >= 2 && clean.length <= 12 && /[一-龥]{2}/.test(clean) && !/^[1-9①②③]/.test(clean) && !descPattern.test(line)) { name = clean; break; }
+    }
+    if (!name) {
+      const actionWords = /第|次|吃|尝|做|试|再|先|后|很|太|真|好|超|快|简|易|用/;
+      for (const line of lines) {
+        const clean = line.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "").replace(/[^一-鿿炒烧煮拌蒸炸焖炖煎烤]/g, " ");
+        for (const part of clean.trim().split(/\s+/)) {
+          const m = part.match(/^([一-龥]{1,5})(炒|烧|煮|拌|蒸|炸|焖|炖|煎|烤)([一-龥]{1,6})$/);
+          if (m) { name = actionWords.test(m[1]) && !actionWords.test(m[3]) ? m[2] + m[3] : part; break; }
+        }
+        if (name) break;
+      }
+    }
+    if (!name && lines.length) name = lines[0].replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "").replace(/[！!‼？。，,.\s]/g, "").slice(0, 12);
+    // Category
+    const catResult = generateRecipeFromName(name);
+    // Ingredients
+    const commonPantry = new Set(["盐","糖","油","水","醋","酱油","生抽","老抽","耗油","蚝油","料酒","米酒","花雕酒","白糖","冰糖","红糖","食盐","食用油","菜籽油","花生油","大豆油","玉米油","橄榄油","猪油","味精","鸡精","白胡椒","黑胡椒","胡椒粉","淀粉","生粉","玉米淀粉","香油","麻油","色拉油","豆油","葵花油"]);
+    const unusualCondiments = new Set(["鱼露","虾酱","豆豉","腐乳","黄豆酱","甜面酱","郫县豆瓣","豆瓣酱","沙茶酱","海鲜酱","芝麻酱","花生酱","番茄酱","辣酱","辣椒酱","剁椒","泡椒","泡姜","柱侯酱","南乳","XO酱","椰浆","椰奶","咖喱","咖喱粉","香茅","柠檬叶","南姜","花椒油","辣椒油","红油","藤椒油"]);
+    const seen = new Set();
+    const ingredients = [];
+    const addIng = (n, front = false) => {
+      if (!n || n.length < 1 || n.length > 8 || seen.has(n) || commonPantry.has(n)) return;
+      seen.add(n);
+      const ing = { name: n, quantity: "", unit: "", optional: false };
+      if (unusualCondiments.has(n)) ing.note = "特殊调料";
+      front ? ingredients.unshift(ing) : ingredients.push(ing);
+    };
+    const ingLineIdx = lines.findIndex(l => /(?:食材|原料|用料)[：:]/.test(l));
+    if (ingLineIdx >= 0) {
+      lines[ingLineIdx].replace(/.*(?:食材|原料|用料)[：:]\s*/, "").split(/[，,、\s\/]+/).forEach(p => addIng(p.replace(/\d+[\w]*$/, "").trim()));
+    }
+    // Only scan steps for ingredients if no explicit 食材 line was found
+    if (ingredients.length === 0) {
+      const stepText = lines.filter(l => !/食材|原料|用料/.test(l)).join(" ");
+      // Pattern: 将/把X切/洗/焯 — X is clearly a single ingredient being prepped
+      const prepRe = /(?:将|把)([一-龥]{2,4})(?:切|洗|焯|腌|泡|剁|拍|剥)/g;
+      let m; while ((m = prepRe.exec(stepText)) !== null) addIng(m[1]);
+      // Pattern: 下X/放X where X is followed immediately by another verb or punctuation (short noun only)
+      const addRe = /(?:下|放入?|加入?)([一-龥]{2,4})(?=[，。,；\s炒烧煮拌蒸炸焖炖煎烤翻])/g;
+      while ((m = addRe.exec(stepText)) !== null) addIng(m[1]);
+    }
+    const vm = name.match(/^(.{1,5})(炒|烧|煮|拌|蒸|炸|焖|炖|煎|烤)(.{1,6})$/);
+    if (vm) { addIng(vm[1], true); addIng(vm[3], true); }
+    // Steps
+    const stepLines = lines.filter(l => /^[1-9①②③④⑤⑥⑦⑧⑨]/.test(l));
+    const steps = stepLines.length > 0
+      ? stepLines.map((l, i) => ({ step_number: i + 1, instruction: l.replace(/^[1-9①-⑨️⃣][.。、\s️⃣]*/, "").trim(), tip: "" }))
+      : parseStepsFromText(rawText);
+    return { name, category: catResult.category, ingredients, steps };
+  };
+
+  const handleParseImport = async () => {
+    let rawText = "";
+    if (importTab === "url") {
+      const url = importUrl.trim();
+      if (!url) { showToast("请输入链接地址"); return; }
+      rawText = url;
+    } else {
+      rawText = importFreeText.trim();
+      if (!rawText) { showToast("请输入或粘贴菜谱内容"); return; }
+    }
+    setImportParsing(true);
+    try {
+      const raw = await callGemini(
+        `你是一个中餐菜谱解析助手。从下面的文字中提取菜谱信息。
+返回严格的JSON格式，不要加任何解释或markdown代码块：
+{
+  "name": "菜名，简短准确",
+  "category": "必须是以下之一：猪肉/牛肉/羊肉/鸡肉/鸭肉/海鲜/蔬菜/豆腐/主食/汤品（田螺蛤蜊虾蟹鱼等水产归海鲜）",
+  "ingredients": [{"name":"食材名","quantity":"用量或空字符串","unit":"单位或空字符串","unusual":false}],
+  "steps": [{"step_number":1,"instruction":"步骤说明","tip":"小技巧或空字符串"}]
+}
+规则：
+- 菜名要简洁准确，只保留菜的名字，去掉"第一次吃""真的太下饭了"等标题营销语
+- 食材只包含需要购买的原材料（肉、蔬菜、豆腐等），每个食材是单独一个词，不是短语
+- 食材不要包含：盐、糖、油、酱油、生抽、老抽、蚝油、料酒、米酒、味精、鸡精、淀粉、香油等家庭常备调料
+- 但要包含鱼露、豆豉、豆瓣酱、沙茶酱、椰浆、咖喱等特殊调料，并将unusual设为true
+- 步骤要清晰，保留原文的关键细节和技巧，步骤说明不超过60字
+
+原始文字：
+${rawText}`
+      );
+      // Extract JSON — find the outermost { } block
+      console.log("Gemini raw response:", raw);
+      const start = raw.indexOf("{");
+      const end = raw.lastIndexOf("}");
+      if (start === -1 || end === -1) throw new Error("no JSON in response");
+      const json = JSON.parse(raw.slice(start, end + 1));
+      const ingredients = (json.ingredients || []).map(ing => ({
+        name: ing.name, quantity: ing.quantity || "", unit: ing.unit || "",
+        optional: false, ...(ing.unusual ? { note: "特殊调料" } : {})
+      }));
+      const steps = (json.steps || []).map((s, i) => ({ step_number: i + 1, instruction: s.instruction || "", tip: s.tip || "" }));
+      const category = normalizeCategory(json.category);
+      setForm(f => ({
+        ...f,
+        name: json.name || f.name,
+        category,
+        image: CATEGORY_EMOJI[category] || f.image,
+        ingredients: ingredients.length > 0 ? ingredients : f.ingredients,
+        steps: steps.length > 0 ? steps : f.steps,
+      }));
+      setShowImport(false);
+      setImportUrl("");
+      setImportFreeText("");
+      showToast("✓ AI 已识别，请确认菜名和分类");
+    } catch (e) {
+      console.error("Import AI error, falling back to regex:", e);
+      const fb = parseRecipeFromText(rawText);
+      const category = fb.category || "其他";
+      setForm(f => ({
+        ...f,
+        name: fb.name || f.name,
+        category,
+        image: CATEGORY_EMOJI[category] || f.image,
+        ingredients: fb.ingredients.length > 0 ? fb.ingredients : f.ingredients,
+        steps: fb.steps.length > 0 ? fb.steps : f.steps,
+      }));
+      setShowImport(false);
+      setImportUrl("");
+      setImportFreeText("");
+      showToast("✓ 已识别（离线模式），请确认菜名和分类");
+    }
+    setImportParsing(false);
+  };
+
+  const optimizeTextToSteps = (text) => {
+    let chunks = text.split(/(?=[1-9][.。、）\)]\s*)|(?=第[一二三四五六七八九十]步)/).map(s => s.trim()).filter(Boolean);
+    if (chunks.length <= 1) chunks = text.split(/[。；;]\s*/).map(s => s.trim()).filter(s => s.length > 2);
+    if (chunks.length <= 1) chunks = text.split(/(?=[，,]\s*(?:先|然后|接着|再|最后|下|放|加|炒|煮|焖|蒸|炸|烤|切|洗|腌|调|翻|盛|出锅))/).map(s => s.replace(/^[，,]\s*/, "").trim()).filter(s => s.length > 2);
+    return chunks.map((chunk, i) => ({
+      step_number: i + 1,
+      instruction: chunk.replace(/^[1-9①②③④⑤⑥⑦⑧⑨][.。、\)）\s]*/, "").replace(/^第[一二三四五六七八九十]步[：:：]?\s*/, "").trim(),
+      tip: ""
+    })).filter(s => s.instruction.length > 0);
+  };
+
+  const handleOptimizeFreeText = async () => {
+    if (!freeText.trim()) return;
+    setOptimizing(true);
+    try {
+      const raw = await callGemini(
+        `你是一个烹饪助手。将下面的做法文字整理成清晰的步骤列表。
+返回严格的JSON格式，不要加任何解释或markdown代码块：
+[{"step_number":1,"instruction":"步骤说明","tip":"小技巧或空字符串"}]
+要求：每步聚焦一个动作，语言简洁，保留原文的关键细节。
+
+做法文字：
+${freeText.trim()}`
+      );
+      const _sa=raw.indexOf("["),_ea=raw.lastIndexOf("]");
+      const steps = (JSON.parse(_sa>-1&&_ea>-1 ? raw.slice(_sa,_ea+1) : "[]") || []).map((s, i) => ({ step_number: i + 1, instruction: s.instruction || "", tip: s.tip || "" }));
+      update("steps", steps); autoPopulateFromSteps(steps);
+      setStepsMode("structured");
+      setFreeText("");
+      showToast(`✨ AI 已整理步骤`);
+    } catch (e) {
+      console.error("Optimize AI error, falling back to regex:", e);
+      const steps = optimizeTextToSteps(freeText.trim());
+      update("steps", steps); autoPopulateFromSteps(steps);
+      setStepsMode("structured");
+      setFreeText("");
+      showToast(`✓ 已整理步骤（离线模式）`);
+    }
+    setOptimizing(false);
+  };
+
+  const handleOptimizeExistingSteps = async () => {
+    if (!form.steps.length) return;
+    setOptimizing(true);
+    try {
+      const combined = form.steps.map(s => s.instruction).join("。");
+      const raw = await callGemini(
+        `你是一个烹饪助手。优化下面的烹饪步骤，让它们更清晰、更易执行。
+返回严格的JSON格式，不要加任何解释或markdown代码块：
+[{"step_number":1,"instruction":"步骤说明","tip":"小技巧或空字符串"}]
+要求：保持步骤数量合理（3-8步），每步聚焦一个动作，可以补充实用的小技巧。
+
+原始步骤：
+${combined}`
+      );
+      const _sb=raw.indexOf("["),_eb=raw.lastIndexOf("]");
+      const steps = JSON.parse(_sb>-1&&_eb>-1 ? raw.slice(_sb,_eb+1) : "[]");
+      update("steps", (Array.isArray(steps) ? steps : []).map((s, i) => ({ step_number: i + 1, instruction: s.instruction || "", tip: s.tip || "" })));
+      showToast(`✨ AI 已优化步骤`);
+    } catch (e) {
+      console.error("Optimize existing AI error, falling back:", e);
+      const combined = form.steps.map(s => s.instruction).join("。");
+      const steps = optimizeTextToSteps(combined);
+      if (steps.length > 0) update("steps", steps);
+      showToast(`✓ 已整理步骤（离线模式）`);
+    }
+    setOptimizing(false);
+  };
+
+  // Auto-generate ingredients on entering page 3
+  const goToIngredients = () => {
+    setIngLoading(true);
+    setTimeout(() => {
+      if (!form.ingredients.length) {
+        const result = generateRecipeFromName(form.name || "家常菜");
+        update("ingredients", result.ingredients);
+      }
+      setIngLoading(false);
+      setPage(2);
+    }, 600);
+  };
+
+  return (
+    <div className="screen" style={{ display: "flex", flexDirection: "column" }}>
+
+      {/* ── Sticky header ── */}
+      <div style={{ padding: "52px 20px 14px", background: "#faf7f2", borderBottom: "1px solid #f0ebe3", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <button className="back-btn" onClick={page === 0 ? onBack : () => setPage(p => p - 1)} style={{ margin: 0 }}>
+            {page === 0 ? "← 取消" : "← 返回"}
+          </button>
+          {page === 2 && (
+            <button className="btn-primary" style={{ padding: "8px 20px", fontSize: 14 }} onClick={() => {
+              if (!form.name.trim()) { showToast("请先填写菜名"); return; }
+              onSave({ ...form, id: "d"+Date.now(), is_favorite: false, cook_count: 0,
+                last_cooked_date: null, source_links: [], imageUrl: imageUrl||null,
+                steps: form.steps.map((s,i) => ({ step_number: i+1, ...s })) });
+            }}>保存 ✓</button>
+          )}
+        </div>
+        {(progressStep => (
+          <div style={{ display: "flex", alignItems: "center", gap: 0, marginTop: 14 }}>
+            {pages.map((label, i) => (
+              <React.Fragment key={i}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flex: 1 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 10,
+                    background: i < progressStep ? "#c17f3c" : i === progressStep ? "#1a1714" : "#f0ebe3",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 12, fontWeight: 700,
+                    color: i <= progressStep ? "#fff" : "#b0a89e"
+                  }}>
+                    {i < progressStep ? "✓" : i + 1}
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: i === progressStep ? "#1a1714" : "#b0a89e", whiteSpace: "nowrap" }}>{label}</div>
+                </div>
+                {i < pages.length - 1 && (
+                  <div style={{ height: 2, flex: 2, background: i < progressStep ? "#c17f3c" : "#f0ebe3", borderRadius: 1, marginBottom: 16 }} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        ))(page)}
+      </div>
+
+      {/* ── Scrollable body ── */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 32px" }}>
+
+        {/* ── PAGE 0: 基本信息 ── */}
+        {page === 0 && (
+          <div style={{ paddingTop: 8 }}>
+
+            {/* Import panel */}
+            {showImport ? (
+              <div style={{ background: "#fff", borderRadius: 16, padding: 16, border: "1px solid #f0ebe3", marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#1a1714" }}>✨ 智能导入</div>
+                  <button onClick={() => { setShowImport(false); setImportUrl(""); setImportFreeText(""); }}
+                    style={{ background: "none", border: "none", color: "#9a9590", fontSize: 18, cursor: "pointer" }}>✕</button>
+                </div>
+                <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                  {[{ key: "text", label: "📝 文字" }, { key: "url", label: "🔗 链接" }].map(t => (
+                    <button key={t.key} onClick={() => setImportTab(t.key)} style={{
+                      flex: 1, padding: "9px 0", borderRadius: 10, border: "none", cursor: "pointer",
+                      fontSize: 13, fontWeight: 700,
+                      background: importTab === t.key ? "#1a1714" : "#f5f0ea",
+                      color: importTab === t.key ? "#fff" : "#5a5550"
+                    }}>{t.label}</button>
+                  ))}
+                </div>
+                {importTab === "url" && (
+                  <div>
+                    <input value={importUrl} onChange={e => setImportUrl(e.target.value)}
+                      placeholder="粘贴小红书 / 菜谱网址..."
+                      style={{ width: "100%", borderRadius: 12, border: "1.5px solid #e0dbd4", padding: "12px 14px", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none", background: "#faf7f2", marginBottom: 8 }} />
+                    <div style={{ fontSize: 11, color: "#b0a89e", lineHeight: 1.5, marginBottom: 8 }}>粘贴链接后，再把页面上的文字复制到📝文字栏一起识别效果更好</div>
+                  </div>
+                )}
+                {importTab === "text" && (
+                  <textarea value={importFreeText} onChange={e => setImportFreeText(e.target.value)}
+                    placeholder={"直接粘贴菜谱文字...\n\n东安鸡\n食材：鸡腿 红辣椒 姜 葱 花椒\n1 鸡腿焯水切块\n2 热油爆香姜葱花椒辣椒\n3 放鸡块翻炒加醋调味"}
+                    style={{ width: "100%", minHeight: 160, borderRadius: 12, border: "1.5px solid #e0dbd4", padding: "10px 12px", fontSize: 13, fontFamily: "inherit", lineHeight: 1.7, resize: "none", boxSizing: "border-box", outline: "none", background: "#faf7f2", marginBottom: 8 }} />
+                )}
+                <button onClick={handleParseImport} disabled={importParsing} style={{
+                  width: "100%", background: importParsing ? "#f5f0ea" : "#1a1714",
+                  border: "none", borderRadius: 12, padding: "13px 0", color: importParsing ? "#9a9590" : "#fff",
+                  fontSize: 14, fontWeight: 800, cursor: importParsing ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8
+                }}>
+                  {importParsing ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⟳</span> 识别中...</> : "✨ 自动识别并填入"}
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowImport(true)} style={{
+                width: "100%", background: "#faf7f2", border: "1.5px dashed #c17f3c",
+                borderRadius: 14, padding: "11px 16px", cursor: "pointer", marginBottom: 16,
+                display: "flex", alignItems: "center", gap: 10
+              }}>
+                <span style={{ fontSize: 20 }}>✨</span>
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1714" }}>从链接 / 文字导入</div>
+                  <div style={{ fontSize: 11, color: "#9a9590" }}>粘贴小红书链接或菜谱文字，自动填写</div>
+                </div>
+              </button>
+            )}
+
+            <div className="form-section">
+              <label className="form-label">菜品名称</label>
+              <input className="input-field" value={form.name} onChange={e => {
+                update("name", e.target.value);
+                setImageUrl(e.target.value.trim()
+                  ? "https://source.unsplash.com/400x300/?" + encodeURIComponent(e.target.value.trim() + " food chinese")
+                  : "");
+              }} placeholder="例如：炒田螺、东安鸡..." />
+            </div>
+            <div className="form-section">
+              <label className="form-label">分类</label>
+              <div className="chips-row">
+                {VALID_CATEGORIES.map(c => (
+                  <button key={c} className={`chip ${form.category === c ? "chip-active" : "chip-inactive"}`}
+                    onClick={() => { update("category", c); if (CATEGORY_EMOJI[c]) update("image", CATEGORY_EMOJI[c]); }}>{CATEGORY_EMOJI[c]} {c}</button>
+                ))}
+              </div>
+            </div>
+            <div className="form-section">
+              <label className="form-label">图片（可选）</label>
+              <div onClick={() => setShowImagePicker(true)} style={{
+                width: 88, height: 88, borderRadius: 16, overflow: "hidden",
+                background: "#f5f0ea", border: "2px dashed #d4cdc5", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", position: "relative"
+              }}>
+                {imageUrl ? <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => setImageUrl("")} />
+                  : <span style={{ fontSize: 40 }}>{form.image}</span>}
+                <div style={{ position: "absolute", bottom: 4, right: 4, background: "rgba(0,0,0,0.5)", borderRadius: 8, padding: "2px 6px", fontSize: 10, color: "#fff" }}>换图</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── PAGE 2: 烹饪步骤 ── */}
+        {page === 1 && (
+          <div style={{ paddingTop: 8 }}>
+            {/* Input textarea — always visible above structured steps */}
+            <div style={{ marginBottom: 14 }}>
+              <textarea className="input-field" value={freeText} onChange={e => setFreeText(e.target.value)}
+                placeholder={"随便写，AI 帮你整理...\n\n先把鸡腿腌制20分钟，锅里放油爆香姜蒜，鸡块翻炒变色后加生抽老抽糖，倒开水焖20分钟，收汁出锅"}
+                style={{ minHeight: 100, fontSize: 13, lineHeight: 1.7 }} />
+            </div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              {/* AI button: label changes based on whether freeText has content */}
+              <button
+                onClick={() => freeText.trim() ? handleOptimizeFreeText() : handleAiGenerate()}
+                disabled={(aiLoading || optimizing) || !form.name.trim()}
+                style={{
+                  flex: 2, background: (aiLoading || optimizing) ? "#f5f0ea" : "#1a1714",
+                  border: "none", borderRadius: 12, padding: "12px 8px",
+                  color: (aiLoading || optimizing) ? "#9a9590" : "#fff", fontSize: 13, fontWeight: 700,
+                  cursor: (aiLoading || optimizing) || !form.name.trim() ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6
+                }}>
+                {(aiLoading || optimizing)
+                  ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⟳</span> 处理中...</>
+                  : freeText.trim() ? "✨ AI 优化步骤" : "✨ AI 一键生成"}
+              </button>
+              <button onClick={() => setStepsMode(m => m === "paste" ? "structured" : "paste")} style={{
+                flex: 1, background: stepsMode === "paste" ? "#fdf3e7" : "#f5f0ea",
+                border: stepsMode === "paste" ? "1.5px solid #c17f3c" : "none",
+                borderRadius: 12, padding: "12px 8px", color: stepsMode === "paste" ? "#c17f3c" : "#5a5550",
+                fontSize: 13, fontWeight: 700, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 5
+              }}>📋 粘贴</button>
+            </div>
+            {!form.name.trim() && (
+              <div style={{ fontSize: 11, color: "#b0a89e", marginBottom: 12, textAlign: "center" }}>先填写菜名才能 AI 生成</div>
+            )}
+
+            {stepsMode === "paste" && (
+              <div style={{ marginBottom: 16 }}>
+                <textarea className="input-field" value={pasteText} onChange={e => setPasteText(e.target.value)}
+                  placeholder={"1. 第一步...\n2. 第二步..."} style={{ minHeight: 110, fontSize: 13, lineHeight: 1.6 }} />
+                <button onClick={handlePasteConvert} style={{
+                  marginTop: 8, background: "#c17f3c", border: "none", borderRadius: 10,
+                  padding: "10px 0", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", width: "100%"
+                }}>✓ 转换为步骤</button>
+              </div>
+            )}
+            {stepsMode === "structured" && (
+              <div>
+                {form.steps.length > 0 && (
+                  <div style={{ fontSize: 12, color: "#9a9590", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
+                    <span>共 {form.steps.length} 个步骤</span>
+                    <button onClick={() => update("steps", [])} style={{ background: "none", border: "none", color: "#e53935", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>清空</button>
+                  </div>
+                )}
+                {form.steps.map((s, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+                    <div className="step-number" style={{ marginTop: 2, flexShrink: 0 }}>{i + 1}</div>
+                    <div style={{ flex: 1 }}>
+                      <textarea className="input-field" placeholder="步骤说明..." value={s.instruction} onChange={e => {
+                        const arr = [...form.steps]; arr[i] = { ...arr[i], instruction: e.target.value }; update("steps", arr);
+                      }} style={{ minHeight: 60, fontSize: 14 }} />
+                      <input className="input-field" placeholder="💡 小贴士（选填）" value={s.tip||""} onChange={e => {
+                        const arr = [...form.steps]; arr[i] = { ...arr[i], tip: e.target.value }; update("steps", arr);
+                      }} style={{ marginTop: 6, fontSize: 13 }} />
+                    </div>
+                    <button className="btn-icon" style={{ color: "#d4cdc5", alignSelf: "flex-start", marginTop: 2, padding: 4 }}
+                      onClick={() => update("steps", form.steps.filter((_,j) => j !== i))}>✕</button>
+                  </div>
+                ))}
+                <button className="btn-secondary" onClick={() => update("steps", [...form.steps, { step_number: form.steps.length + 1, instruction: "", tip: "" }])}>+ 添加步骤</button>
+              </div>
+            )}
+
+            {/* 人份 / 时间 / 难度 — auto-populated, user can adjust */}
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #f0ebe4" }}>
+              <div style={{ fontSize: 13, color: "#9a9590", marginBottom: 10 }}>根据步骤自动估算，可修改</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div>
+                  <label className="form-label">人份</label>
+                  <input className="input-field" type="number" value={form.servings} onChange={e => update("servings", +e.target.value)} min={1} />
+                </div>
+                <div>
+                  <label className="form-label">时间(分钟)</label>
+                  <input className="input-field" type="number" value={form.estimated_time} onChange={e => update("estimated_time", +e.target.value)} min={5} />
+                </div>
+                <div>
+                  <label className="form-label">难度</label>
+                  <select className="input-field" value={form.difficulty} onChange={e => update("difficulty", e.target.value)}>
+                    <option value="easy">简单</option><option value="medium">中等</option><option value="hard">较难</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── PAGE 3: 食材 & 备注 ── */}
+        {page === 2 && (
+          <div style={{ paddingTop: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1714", marginBottom: 4, marginTop: 16 }}>食材</div>
+            <div style={{ fontSize: 13, color: "#9a9590", marginBottom: 14 }}>根据菜品自动生成，可以直接修改</div>
+            {form.ingredients.map((ing, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 56px 56px 32px", gap: 6, marginBottom: 8, alignItems: "center" }}>
+                <input className="input-field" placeholder="食材名称" value={ing.name} onChange={e => {
+                  const arr = [...form.ingredients]; arr[i] = { ...arr[i], name: e.target.value }; update("ingredients", arr);
+                }} />
+                <input className="input-field" placeholder="用量" value={ing.quantity} style={{ textAlign: "center" }} onChange={e => {
+                  const arr = [...form.ingredients]; arr[i] = { ...arr[i], quantity: e.target.value }; update("ingredients", arr);
+                }} />
+                <input className="input-field" placeholder="单位" value={ing.unit} style={{ textAlign: "center" }} onChange={e => {
+                  const arr = [...form.ingredients]; arr[i] = { ...arr[i], unit: e.target.value }; update("ingredients", arr);
+                }} />
+                <button className="btn-icon" style={{ color: "#d4cdc5", padding: 4 }}
+                  onClick={() => update("ingredients", form.ingredients.filter((_,j) => j !== i))}>✕</button>
+              </div>
+            ))}
+            <button className="btn-secondary" style={{ marginTop: 4 }} onClick={() => update("ingredients", [...form.ingredients, { name: "", quantity: "", unit: "", optional: false }])}>+ 添加食材</button>
+            <button className="btn-secondary" style={{ marginTop: 8 }} onClick={() => {
+              const result = generateRecipeFromName(form.name || "家常菜");
+              update("ingredients", result.ingredients);
+              showToast("✓ 已重新生成食材");
+            }}>↺ 重新生成</button>
+
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1714", marginBottom: 4, marginTop: 28 }}>个人特殊要求</div>
+            <div style={{ background: "#fff8ed", borderRadius: 12, padding: "10px 14px", marginBottom: 14, borderLeft: "4px solid #c17f3c" }}>
+              <div style={{ fontSize: 12, color: "#8a6030", lineHeight: 1.5 }}>会在厨师视图里高亮显示，厨师必须严格执行</div>
+            </div>
+            {form.custom_notes.map((note, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                <div style={{ width: 4, background: "#c17f3c", borderRadius: 2, flexShrink: 0, marginTop: 4, marginBottom: 4 }} />
+                <textarea className="input-field" value={note} onChange={e => {
+                  const notes = [...form.custom_notes]; notes[i] = e.target.value; update("custom_notes", notes);
+                }} placeholder="例如：老抽3勺，颜色要深；花椒必须现磨..." style={{ flex: 1, minHeight: 64 }} />
+                {form.custom_notes.length > 1 && (
+                  <button className="btn-icon" style={{ color: "#d4cdc5", alignSelf: "flex-start", marginTop: 4, padding: 4 }}
+                    onClick={() => update("custom_notes", form.custom_notes.filter((_,j) => j !== i))}>✕</button>
+                )}
+              </div>
+            ))}
+            <button className="btn-secondary" onClick={() => update("custom_notes", [...form.custom_notes, ""])}>+ 再加一条</button>
+          </div>
+        )}
+
+      </div>
+
+      {/* ── Bottom nav ── */}
+      <div style={{ padding: "12px 20px 32px", background: "#faf7f2", borderTop: "1px solid #f0ebe3", display: "flex", gap: 10, flexShrink: 0 }}>
+        {page > 0 && <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setPage(p => p - 1)}>← 上一步</button>}
+        {page === 0 && (
+          <button className="btn-primary" style={{ flex: 1 }} onClick={() => {
+            if (!form.name.trim()) { showToast("请先填写菜名"); return; }
+            setPage(1);
+          }}>下一步 →</button>
+        )}
+        {page === 1 && (
+          <button className="btn-primary" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+            onClick={goToIngredients} disabled={ingLoading}>
+            {ingLoading ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⟳</span> 生成食材...</> : "下一步 →"}
+          </button>
+        )}
+        {page === 2 && (
+          <button className="btn-primary" style={{ flex: 1 }} onClick={() => {
+            if (!form.name.trim()) { showToast("请先填写菜名"); return; }
+            onSave({ ...form, id: "d"+Date.now(), is_favorite: false, cook_count: 0,
+              last_cooked_date: null, source_links: [], imageUrl: imageUrl||null,
+              steps: form.steps.map((s,i) => ({ step_number: i+1, ...s })) });
+          }}>保存菜品 ✓</button>
+        )}
+      </div>
+
+      {/* Image picker bottom sheet */}
+      {showImagePicker && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200 }} onClick={() => setShowImagePicker(false)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }} />
+          <div onClick={e => e.stopPropagation()} style={{
+            position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+            width: 375, background: "#fff", borderRadius: "20px 20px 0 0", padding: "20px 20px 48px"
+          }}>
+            <div style={{ width: 36, height: 4, background: "#e0dbd4", borderRadius: 2, margin: "0 auto 20px" }} />
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#1a1714" }}>选择图片来源</div>
+            <label style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #f0ebe3", cursor: "pointer" }}>
+              <span style={{ fontSize: 24 }}>📷</span><span style={{ fontSize: 15, color: "#1a1714" }}>拍照</span>
+              <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleImageFile} />
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #f0ebe3", cursor: "pointer" }}>
+              <span style={{ fontSize: 24 }}>🖼️</span><span style={{ fontSize: 15, color: "#1a1714" }}>从相册选择</span>
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageFile} />
+            </label>
+            {imageUrl && (
+              <button onClick={() => { setImageUrl(""); setShowImagePicker(false); }} style={{
+                display: "flex", alignItems: "center", gap: 14, padding: "14px 0", background: "none", border: "none", width: "100%", cursor: "pointer"
+              }}><span style={{ fontSize: 24 }}>🗑️</span><span style={{ fontSize: 15, color: "#e05a3a" }}>删除图片</span></button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+
+// ─── WEEKLY PLAN SCREEN ───────────────────────────────────────────
+const MEAL_LABELS = { breakfast: "早餐", lunch: "午餐", dinner: "晚餐" };
+const WEEKDAYS = ["周一","周二","周三","周四","周五","周六","周日"];
+
+function buildDateLabel(dayIndex) {
+  const base = new Date(2026, 4, 11); // May 11 = Monday baseline
+  base.setDate(base.getDate() + dayIndex);
+  const m = base.getMonth() + 1, d = base.getDate();
+  return { date: `${WEEKDAYS[dayIndex % 7]} ${m}月${d}日`, short: WEEKDAYS[dayIndex % 7] };
+}
+
+const VEG_CATEGORIES = new Set(["蔬菜", "豆腐"]);
+function isVegDish(d) { return VEG_CATEGORIES.has(d.category); }
+
+function generatePlan(dishes, planSettings) {
+  const activeMealSlots = Object.entries(planSettings.meals).filter(([, v]) => v).map(([k]) => k);
+  if (activeMealSlots.length === 0 || dishes.length === 0) return null;
+  const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const meatPool = shuffle(dishes.filter(d => !isVegDish(d)));
+  const vegPool = shuffle(dishes.filter(d => isVegDish(d)));
+  let meatPtr = 0, vegPtr = 0;
+  const nextMeat = () => { if (meatPool.length === 0) return null; const d = meatPool[meatPtr % meatPool.length]; meatPtr++; return d.id; };
+  const nextVeg = () => { if (vegPool.length === 0) return null; const d = vegPool[vegPtr % vegPool.length]; vegPtr++; return d.id; };
+  const today = new Date();
+  const base = new Date(today); base.setDate(today.getDate() - today.getDay() + 1);
+  const days = Array.from({ length: planSettings.days }, (_, i) => {
+    const dt = new Date(base); dt.setDate(base.getDate() + i);
+    const m = dt.getMonth() + 1, d = dt.getDate();
+    const meals = {};
+    activeMealSlots.forEach(slot => {
+      const comp = planSettings.mealComposition?.[slot] || { meat: 1, veg: 0 };
+      const ids = [];
+      for (let n = 0; n < comp.meat; n++) { const id = nextMeat(); if (id) ids.push(id); }
+      for (let n = 0; n < comp.veg; n++) { const id = nextVeg(); if (id) ids.push(id); }
+      meals[slot] = ids;
+    });
+    ["breakfast","lunch","dinner"].forEach(s => { if (!meals[s]) meals[s] = []; });
+    return { date: `${WEEKDAYS[i % 7]} ${m}月${d}日`, short: WEEKDAYS[i % 7], meals, notes: "", status: "pending" };
+  });
+  const startDay = days[0]?.date.split(" ")[1] || "";
+  const endDay = days[days.length - 1]?.date.split(" ")[1] || "";
+  return { id: `mp${Date.now()}`, week_range: `${startDay}–${endDay}`, days };
+}
+
+const GROCERY_CATEGORY = {
+  "猪肉": "肉类", "牛肉": "肉类", "羊肉": "肉类", "鸡肉": "肉类", "鸭肉": "肉类",
+  "海鲜": "海鲜", "蔬菜": "蔬菜", "豆腐": "豆制品", "主食": "主食", "汤品": "肉类",
+};
+
+function generateGroceryFromPlan(dishes, mealPlan) {
+  const dishIds = new Set();
+  (mealPlan?.days || []).forEach(day => {
+    Object.values(day.meals || {}).forEach(slot => (slot || []).forEach(id => dishIds.add(id)));
+  });
+  const ingredientMap = {};
+  dishIds.forEach(id => {
+    const dish = dishes.find(d => d.id === id);
+    if (!dish) return;
+    (dish.ingredients || []).forEach(ing => {
+      if (isPantryStaple(ing.name)) return;
+      const key = ing.name;
+      const dishCat = GROCERY_CATEGORY[dish.category] || "其他";
+      if (!ingredientMap[key]) {
+        ingredientMap[key] = {
+          id: `gi_${key}`, name: key,
+          total_quantity: ing.quantity || 1, unit: ing.unit || "",
+          category: dishCat, checked: false
+        };
+      } else {
+        ingredientMap[key].total_quantity += (ing.quantity || 1);
+      }
+    });
+  });
+  return { id: `g${Date.now()}`, linked_meal_plan_id: mealPlan?.id, items: Object.values(ingredientMap) };
+}
+
+function PlanScreen({ dishes, mealPlan, setMealPlan, setGroceryList, planSettings, setPlanSettings, onNavigate, showToast }) {
+  const [swapModal, setSwapModal] = useState(null);
+  const [swapSearch, setSwapSearch] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsSnapshot, setSettingsSnapshot] = useState(null);
+  const [addDishModal, setAddDishModal] = useState(null); // { dayIndex, mealType }
+  const [addDishSearch, setAddDishSearch] = useState("");
+
+  const activeMealSlots = Object.entries(planSettings.meals).filter(([, v]) => v).map(([k]) => k);
+  const mealOrder = ["breakfast", "lunch", "dinner"];
+  const orderedActiveSlots = mealOrder.filter(s => planSettings.meals[s]);
+
+  const handleGenerate = () => {
+    if (dishes.length === 0) { showToast("先添加一些菜品吧！"); return; }
+    const plan = generatePlan(dishes, planSettings);
+    if (!plan) { showToast("请先在设置中开启至少一个餐次"); return; }
+    setMealPlan(plan);
+    const grocery = generateGroceryFromPlan(dishes, plan);
+    setGroceryList(grocery);
+    showToast("✨ 菜单已生成！");
+  };
+
+  const regenerateDay = (dayIndex) => {
+    const usedIds = new Set();
+    mealPlan.days.forEach((d, i) => {
+      if (i !== dayIndex) Object.values(d.meals || {}).forEach(slot => slot.forEach(id => usedIds.add(id)));
+    });
+    const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const meatSrc = dishes.filter(d => !isVegDish(d) && !usedIds.has(d.id));
+    const vegSrc = dishes.filter(d => isVegDish(d) && !usedIds.has(d.id));
+    const meatPool = shuffle(meatSrc.length > 0 ? meatSrc : dishes.filter(d => !isVegDish(d)));
+    const vegPool = shuffle(vegSrc.length > 0 ? vegSrc : dishes.filter(d => isVegDish(d)));
+    let meatPtr = 0, vegPtr = 0;
+    const nextMeat = () => { if (meatPool.length === 0) return null; const d = meatPool[meatPtr % meatPool.length]; meatPtr++; return d.id; };
+    const nextVeg = () => { if (vegPool.length === 0) return null; const d = vegPool[vegPtr % vegPool.length]; vegPtr++; return d.id; };
+    const newMeals = {};
+    orderedActiveSlots.forEach(slot => {
+      const comp = planSettings.mealComposition?.[slot] || { meat: 1, veg: 0 };
+      const ids = [];
+      for (let n = 0; n < comp.meat; n++) { const id = nextMeat(); if (id) ids.push(id); }
+      for (let n = 0; n < comp.veg; n++) { const id = nextVeg(); if (id) ids.push(id); }
+      newMeals[slot] = ids;
+    });
+    ["breakfast","lunch","dinner"].forEach(s => { if (!newMeals[s]) newMeals[s] = []; });
+    const updatedPlan = { ...mealPlan, days: mealPlan.days.map((d, i) => i === dayIndex ? { ...d, meals: newMeals } : d) };
+    setMealPlan(updatedPlan);
+    setGroceryList(generateGroceryFromPlan(dishes, updatedPlan));
+    showToast("🔄 当日菜单已重新生成！");
+  };
+
+  const addDishToSlot = (dishId, dayIndex, mealType) => {
+    const updatedPlan = { ...mealPlan, days: mealPlan.days.map((d, i) => i === dayIndex ? {
+      ...d, meals: { ...d.meals, [mealType]: [...(d.meals[mealType] || []), dishId] }
+    } : d) };
+    setMealPlan(updatedPlan);
+    setGroceryList(generateGroceryFromPlan(dishes, updatedPlan));
+    setAddDishModal(null);
+    showToast("✓ 已添加");
+  };
+
+  const removeDishFromSlot = (dishId, dayIndex, mealType) => {
+    const updatedPlan = { ...mealPlan, days: mealPlan.days.map((d, i) => i === dayIndex ? {
+      ...d, meals: { ...d.meals, [mealType]: (d.meals[mealType] || []).filter(id => id !== dishId) }
+    } : d) };
+    setMealPlan(updatedPlan);
+    setGroceryList(generateGroceryFromPlan(dishes, updatedPlan));
+    showToast("✓ 已移除");
+  };
+
+  return (
+    <div className="screen">
+      {/* Header */}
+      <div style={{ padding: "52px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <div className="screen-title">每周菜单</div>
+          {mealPlan && <div className="body-text" style={{ marginTop: 3 }}>{mealPlan.week_range}</div>}
+        </div>
+        <button onClick={() => { setSettingsSnapshot(JSON.stringify(planSettings)); setShowSettings(true); }} style={{
+          width: 40, height: 40, borderRadius: 12, background: "#f5f0ea", border: "none",
+          fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          WebkitTapHighlightColor: "transparent", marginTop: 4
+        }}>⚙️</button>
+      </div>
+
+      {!mealPlan ? (
+        <div className="empty-state" style={{ marginTop: 40 }}>
+          <div className="empty-icon">📅</div>
+          <div className="section-title">还没有生成菜单</div>
+          <div className="body-text" style={{ maxWidth: 240 }}>根据你的菜品库自动排菜</div>
+          <button className="btn-primary" style={{ marginTop: 16, maxWidth: 200 }} onClick={handleGenerate}>✨ 生成菜单</button>
+        </div>
+      ) : (
+        <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+
+          {mealPlan.days.map((day, dayIndex) => (
+            <div key={dayIndex} className="day-card">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1a1714" }}>{day.date}</div>
+                <button onClick={() => regenerateDay(dayIndex)} style={{
+                  background: "#f5f0ea", border: "none", borderRadius: 10, padding: "6px 10px",
+                  fontSize: 12, fontWeight: 600, color: "#5a5550", cursor: "pointer", WebkitTapHighlightColor: "transparent"
+                }}>🔄 重排</button>
+              </div>
+
+              {orderedActiveSlots.map((mealType, slotIdx) => {
+                const slotDishes = (day.meals || {})[mealType] || [];
+                return (
+                  <div key={mealType} style={{ marginBottom: slotIdx < orderedActiveSlots.length - 1 ? 10 : 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#9a9590", letterSpacing: 0.5, marginBottom: 6 }}>{MEAL_LABELS[mealType]}</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {slotDishes.length === 0 && (
+                        <div style={{ fontSize: 13, color: "#b0a89e", padding: "6px 0" }}>暂无菜品</div>
+                      )}
+                      {slotDishes.map(dishId => {
+                        const d = getDishById(dishes, dishId);
+                        if (!d) return null;
+                        return (
+                          <div key={dishId} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <button onClick={() => onNavigate("dish-detail", dishId)} style={{
+                              flex: 1, display: "flex", alignItems: "center", gap: 8, background: "#fff", borderRadius: 10,
+                              padding: "8px 10px", border: "none", cursor: "pointer", textAlign: "left", WebkitTapHighlightColor: "transparent"
+                            }}>
+                              <span style={{ fontSize: 20 }}>{d.image}</span>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1714" }}>{d.name}</div>
+                                <div className="caption">⏱ {d.estimated_time}分钟 · {d.servings}人份</div>
+                              </div>
+                            </button>
+                            <button onClick={() => setSwapModal({ dayIndex, mealType, dishId })} style={{
+                              width: 30, height: 30, borderRadius: 8, background: "#f5f0ea", border: "none",
+                              fontSize: 13, color: "#7a7570", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                              display: "flex", alignItems: "center", justifyContent: "center"
+                            }}>↔</button>
+                            <button onClick={() => removeDishFromSlot(dishId, dayIndex, mealType)} style={{
+                              width: 30, height: 30, borderRadius: 8, background: "#fef0ee", border: "none",
+                              fontSize: 13, color: "#d05a3a", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                              display: "flex", alignItems: "center", justifyContent: "center"
+                            }}>×</button>
+                          </div>
+                        );
+                      })}
+                      <button onClick={() => setAddDishModal({ dayIndex, mealType })} style={{
+                        display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "none",
+                        border: "1.5px dashed #d4cdc5", borderRadius: 10, fontSize: 13, color: "#9a9590",
+                        cursor: "pointer", WebkitTapHighlightColor: "transparent"
+                      }}>+ 添加菜品</button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {day.notes ? (
+                <div style={{ marginTop: 10, padding: "8px 10px", background: "#fff8ed", borderRadius: 10, fontSize: 12, color: "#8a6030", lineHeight: 1.4 }}>
+                  📌 {day.notes}
+                </div>
+              ) : null}
+            </div>
+          ))}
+
+          <button className="btn-primary" onClick={() => { onNavigate("share"); showToast("📤 正在打开厨师视图"); }}>
+            📤 分享给厨师
+          </button>
+          <button className="btn-secondary" onClick={() => onNavigate("grocery")}>
+            🛒 查看采购清单
+          </button>
+          <button className="btn-secondary" onClick={handleGenerate} style={{ color: "#9a9590" }}>
+            🔄 重新生成全部
+          </button>
+        </div>
+      )}
+
+      {/* Swap modal */}
+      {swapModal && (() => {
+        const q = swapSearch.trim().toLowerCase();
+        const filtered = dishes.filter(d => d.id !== swapModal.dishId && (!q || d.name.toLowerCase().includes(q) || d.category.includes(q)));
+        return (
+          <div className="modal-overlay" onClick={() => { setSwapModal(null); setSwapSearch(""); }}>
+            <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+              <div className="modal-handle" />
+              <div className="section-title" style={{ marginBottom: 12 }}>换成另一道菜</div>
+              <input
+                className="input-field"
+                placeholder="搜索菜名或分类..."
+                value={swapSearch}
+                onChange={e => setSwapSearch(e.target.value)}
+                autoFocus
+                style={{ marginBottom: 12 }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "50vh", overflowY: "auto" }}>
+                {filtered.length === 0 && (
+                  <div style={{ fontSize: 14, color: "#9a9590", padding: "8px 0", textAlign: "center" }}>没有找到匹配的菜品</div>
+                )}
+                {filtered.map(d => (
+                  <button key={d.id} onClick={() => {
+                    const updatedPlan = { ...mealPlan, days: mealPlan.days.map((day, i) => i === swapModal.dayIndex ? {
+                      ...day, meals: { ...day.meals, [swapModal.mealType]: (day.meals[swapModal.mealType] || []).map(id => id === swapModal.dishId ? d.id : id) }
+                    } : day) };
+                    setMealPlan(updatedPlan);
+                    setGroceryList(generateGroceryFromPlan(dishes, updatedPlan));
+                    setSwapModal(null); setSwapSearch("");
+                    showToast(`✓ 已换成 ${d.name}`);
+                  }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#fff", borderRadius: 14, border: "none", cursor: "pointer", textAlign: "left", WebkitTapHighlightColor: "transparent" }}>
+                    <span style={{ fontSize: 24 }}>{d.image}</span>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: "#1a1714" }}>{d.name}</div>
+                      <div className="caption">{d.estimated_time}分钟 · {d.category}</div>
+                    </div>
+                  </button>
+                ))}
+                <button onClick={() => { setSwapModal(null); setSwapSearch(""); onNavigate("add-dish"); }} style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "14px",
+                  background: "none", border: "1.5px dashed #c17f3c", borderRadius: 14,
+                  cursor: "pointer", color: "#c17f3c", fontWeight: 700, fontSize: 14,
+                  WebkitTapHighlightColor: "transparent", marginTop: 4
+                }}>
+                  <span style={{ fontSize: 20 }}>＋</span> 添加新菜品到菜品库
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Add dish modal */}
+      {addDishModal && (() => {
+        const q = addDishSearch.trim().toLowerCase();
+        const filtered = dishes.filter(d => !q || d.name.toLowerCase().includes(q) || d.category.includes(q));
+        return (
+          <div className="modal-overlay" onClick={() => { setAddDishModal(null); setAddDishSearch(""); }}>
+            <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+              <div className="modal-handle" />
+              <div className="section-title" style={{ marginBottom: 12 }}>添加到{MEAL_LABELS[addDishModal.mealType]}</div>
+              <input
+                className="input-field"
+                placeholder="搜索菜名或分类..."
+                value={addDishSearch}
+                onChange={e => setAddDishSearch(e.target.value)}
+                autoFocus
+                style={{ marginBottom: 12 }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "50vh", overflowY: "auto" }}>
+                {filtered.length === 0 && (
+                  <div style={{ fontSize: 14, color: "#9a9590", padding: "8px 0", textAlign: "center" }}>没有找到匹配的菜品</div>
+                )}
+                {filtered.map(d => (
+                  <button key={d.id} onClick={() => { addDishToSlot(d.id, addDishModal.dayIndex, addDishModal.mealType); setAddDishSearch(""); }} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#fff",
+                    borderRadius: 14, border: "none", cursor: "pointer", textAlign: "left", WebkitTapHighlightColor: "transparent"
+                  }}>
+                    <span style={{ fontSize: 24 }}>{d.image}</span>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: "#1a1714" }}>{d.name}</div>
+                      <div className="caption">{d.estimated_time}分钟 · {d.category}</div>
+                    </div>
+                  </button>
+                ))}
+                <button onClick={() => { setAddDishModal(null); setAddDishSearch(""); onNavigate("add-dish"); }} style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "14px",
+                  background: "none", border: "1.5px dashed #c17f3c", borderRadius: 14,
+                  cursor: "pointer", color: "#c17f3c", fontWeight: 700, fontSize: 14,
+                  WebkitTapHighlightColor: "transparent", marginTop: 4
+                }}>
+                  <span style={{ fontSize: 20 }}>＋</span> 添加新菜品到菜品库
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Settings panel */}
+      {showSettings && (
+        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle" />
+            <div className="section-title" style={{ marginBottom: 20 }}>菜单设置</div>
+
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#5a5550", marginBottom: 10 }}>计划天数</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[5, 7].map(n => (
+                  <button key={n} onClick={() => setPlanSettings(s => ({ ...s, days: n }))} style={{
+                    flex: 1, padding: "12px", borderRadius: 12, border: "none", cursor: "pointer",
+                    background: planSettings.days === n ? "#1a1714" : "#f5f0ea",
+                    color: planSettings.days === n ? "#fff" : "#5a5550",
+                    fontWeight: 700, fontSize: 15, WebkitTapHighlightColor: "transparent"
+                  }}>{n}天</button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#5a5550", marginBottom: 10 }}>餐次 &amp; 荤素配比</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[["breakfast","早餐"],["lunch","午餐"],["dinner","晚餐"]].map(([key, label]) => {
+                  const active = planSettings.meals[key];
+                  const comp = planSettings.mealComposition?.[key] || { meat: 1, veg: 0 };
+                  const setComp = (field, delta) => setPlanSettings(s => {
+                    const cur = s.mealComposition?.[key] || { meat: 1, veg: 0 };
+                    const next = Math.max(0, Math.min(5, (cur[field] || 0) + delta));
+                    return { ...s, mealComposition: { ...s.mealComposition, [key]: { ...cur, [field]: next } } };
+                  });
+                  return (
+                    <div key={key} style={{
+                      borderRadius: 14, background: active ? "#fff8ed" : "#f5f0ea",
+                      border: active ? "1.5px solid #c17f3c" : "1.5px solid transparent", overflow: "hidden"
+                    }}>
+                      <button onClick={() => setPlanSettings(s => ({ ...s, meals: { ...s.meals, [key]: !s.meals[key] } }))} style={{
+                        width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "14px 16px", background: "none", border: "none", cursor: "pointer", WebkitTapHighlightColor: "transparent"
+                      }}>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: "#1a1714" }}>{label}</span>
+                        <div style={{
+                          width: 24, height: 24, borderRadius: 8, background: active ? "#c17f3c" : "#d4cdc5",
+                          display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700
+                        }}>{active ? "✓" : ""}</div>
+                      </button>
+                      {active && (
+                        <div style={{ padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+                          {[["meat","🥩 荤菜"],["veg","🥦 素菜"]].map(([field, fieldLabel]) => (
+                            <div key={field} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontSize: 14, color: "#5a5550", fontWeight: 500 }}>{fieldLabel}</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                                <button onClick={() => setComp(field, -1)} style={{
+                                  width: 32, height: 32, borderRadius: "8px 0 0 8px", background: "#f0ebe3",
+                                  border: "none", fontSize: 18, color: "#5a5550", cursor: "pointer",
+                                  display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700,
+                                  WebkitTapHighlightColor: "transparent"
+                                }}>−</button>
+                                <div style={{
+                                  width: 36, height: 32, background: "#fff", display: "flex",
+                                  alignItems: "center", justifyContent: "center",
+                                  fontSize: 15, fontWeight: 700, color: "#1a1714",
+                                  borderTop: "1px solid #e8e0d4", borderBottom: "1px solid #e8e0d4"
+                                }}>{comp[field] ?? 0}</div>
+                                <button onClick={() => setComp(field, +1)} style={{
+                                  width: 32, height: 32, borderRadius: "0 8px 8px 0", background: "#f0ebe3",
+                                  border: "none", fontSize: 18, color: "#5a5550", cursor: "pointer",
+                                  display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700,
+                                  WebkitTapHighlightColor: "transparent"
+                                }}>＋</button>
+                              </div>
+                            </div>
+                          ))}
+                          <div style={{ fontSize: 12, color: "#b0a89e", marginTop: 2 }}>
+                            共 {(comp.meat || 0) + (comp.veg || 0)} 道菜 · 荤 {comp.meat || 0} 素 {comp.veg || 0}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button onClick={() => {
+              setShowSettings(false);
+              if (mealPlan && JSON.stringify(planSettings) !== settingsSnapshot) handleGenerate();
+            }} className="btn-primary" style={{ width: "100%" }}>
+              完成
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── GROCERY SCREEN ───────────────────────────────────────────────
+function GroceryScreen({ groceryList, setGroceryList, showToast }) {
+  const grouped = useMemo(() => groupBy(groceryList?.items || [], "category"), [groceryList]);
+  const totalChecked = groceryList?.items?.filter(i => i.checked).length || 0;
+  const total = groceryList?.items?.length || 0;
+
+  const toggleItem = (id) => {
+    setGroceryList(prev => ({
+      ...prev,
+      items: prev.items.map(item => item.id === id ? { ...item, checked: !item.checked } : item)
+    }));
+  };
+
+  if (!groceryList) {
+    return (
+      <div className="screen">
+        <div style={{ padding: "52px 20px" }}><div className="screen-title">采购清单</div></div>
+        <div className="empty-state">
+          <div className="empty-icon">🛒</div>
+          <div className="section-title">还没有采购清单</div>
+          <div className="body-text">先生成每周菜单，系统会自动生成采购清单</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="screen">
+      <div style={{ padding: "52px 20px 16px" }}>
+        <div className="screen-title">采购清单</div>
+        <div style={{ marginTop: 12, background: "#f5f0ea", borderRadius: 14, padding: "12px 16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div className="body-text">已买 {totalChecked} / 共 {total} 项</div>
+            <button onClick={() => { setGroceryList(prev => ({ ...prev, items: prev.items.map(i => ({ ...i, checked: false })) })); showToast("已重置！"); }}
+              style={{ background: "none", border: "none", fontSize: 13, color: "#9a9590", cursor: "pointer", fontWeight: 600 }}>重置</button>
+          </div>
+          <div style={{ height: 6, background: "#d4cdc5", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", background: "#c17f3c", borderRadius: 3, width: `${(totalChecked / total) * 100}%`, transition: "width 0.3s" }} />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: "0 20px 20px" }}>
+        {Object.entries(grouped).map(([category, items]) => (
+          <div key={category} style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#c17f3c", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 4 }}>
+              {category}
+            </div>
+            <div className="card" style={{ padding: "0 16px" }}>
+              {items.map(item => (
+                <div key={item.id} className="checkbox-row" onClick={() => toggleItem(item.id)}>
+                  <div className={`checkbox ${item.checked ? "checked" : ""}`}>
+                    {item.checked && <span style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>✓</span>}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, color: item.checked ? "#b0a89e" : "#1a1714", textDecoration: item.checked ? "line-through" : "none", fontWeight: 500 }}>
+                      {item.name}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 14, color: item.checked ? "#b0a89e" : "#5a5550", fontWeight: 600 }}>
+                    {item.quantity} {item.unit}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <button className="btn-primary" onClick={() => showToast("📋 采购清单已复制！")}>
+          📋 分享采购清单
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CHEF / SHARE SCREEN ──────────────────────────────────────────
+function ChefDishLibraryScreen({ dishes, onBack, onDishDetail }) {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("全部");
+  const filtered = dishes.filter(d => {
+    const matchCat = category === "全部" || d.category === category;
+    const matchSearch = !search || d.name.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+  return (
+    <div className="screen">
+      <div style={{ padding: "52px 20px 16px", background: "#1a1714" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+          <button onClick={onBack} style={{ background: "rgba(255,255,255,0.12)", border: "none", borderRadius: 10, width: 36, height: 36, color: "#fff", fontSize: 16, cursor: "pointer", flexShrink: 0 }}>←</button>
+          <div>
+            <div style={{ fontSize: 12, color: "#8a7060", letterSpacing: 1 }}>厨师专用</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>菜品库</div>
+          </div>
+        </div>
+        <input className="input-field" placeholder="搜索菜名..." value={search} onChange={e => setSearch(e.target.value)}
+          style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", marginBottom: 0 }} />
+      </div>
+      <div style={{ padding: "12px 20px 0" }}>
+        <div className="chips-row" style={{ marginBottom: 12 }}>
+          {CATEGORIES.map(c => (
+            <button key={c} className={`chip ${category === c ? "chip-active" : "chip-inactive"}`} onClick={() => setCategory(c)}>{c}</button>
+          ))}
+        </div>
+        {filtered.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">🍽️</div><div className="body-text">没有找到菜品</div></div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {filtered.map(d => (
+              <div key={d.id} className="card" onClick={() => onDishDetail(d.id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer" }}>
+                <span style={{ fontSize: 32 }}>{d.image}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#1a1714" }}>{d.name}</div>
+                  <div className="caption">{d.category} · ⏱ {d.estimated_time}分钟 · {d.servings}人份</div>
+                </div>
+                <span style={{ color: "#c8c0b4", fontSize: 16 }}>›</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ShareScreen({ dishes, mealPlan, groceryList, planSettings, showToast, onViewDishLibrary }) {
+  const [expandedDay, setExpandedDay] = useState(0);
+  const [expandedDish, setExpandedDish] = useState(null);
+  const [doneDishes, setDoneDishes] = useState({});
+  const [checkedItems, setCheckedItems] = useState({});
+  const [showGrocery, setShowGrocery] = useState(false);
+  const [chefNotes, setChefNotes] = useState({});
+  const [editingChefNote, setEditingChefNote] = useState(null);
+  const mealOrder = ["breakfast", "lunch", "dinner"];
+  const activeMealSlots = planSettings ? mealOrder.filter(s => planSettings.meals[s]) : ["lunch", "dinner"];
+
+  if (!mealPlan) {
+    return (
+      <div className="screen">
+        <div style={{ padding: "52px 20px" }}><div className="screen-title">厨师视图</div></div>
+        <div className="empty-state">
+          <div className="empty-icon">👨‍🍳</div>
+          <div className="section-title">还没有菜单可分享</div>
+          <div className="body-text">先生成每周菜单，再分享给厨师</div>
+        </div>
+      </div>
+    );
+  }
+
+  const toggleDone = (id) => setDoneDishes(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleCheck = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+
+  return (
+    <div className="screen">
+      {/* Chef header */}
+      <div style={{ background: "#1a1714", padding: "52px 20px 20px", color: "#fff" }}>
+        <div style={{ fontSize: 12, color: "#8a7060", letterSpacing: 1, marginBottom: 6 }}>厨师专用</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: "#fff" }}>本周烹饪计划</div>
+        <div style={{ fontSize: 14, color: "#a09080", marginTop: 4 }}>{mealPlan.week_range} · {mealPlan.days.length}天</div>
+        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+          <button onClick={() => showToast("🔗 链接已复制！")} style={{
+            flex: 1, background: "#c17f3c", border: "none", borderRadius: 12, padding: "10px 14px",
+            color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", WebkitTapHighlightColor: "transparent"
+          }}>📋 复制链接</button>
+          {onViewDishLibrary && (
+            <button onClick={onViewDishLibrary} style={{
+              flex: 1, background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)", borderRadius: 12, padding: "10px 14px",
+              color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", WebkitTapHighlightColor: "transparent"
+            }}>🍽️ 查看菜品库</button>
+          )}
+        </div>
+      </div>
+
+      <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+
+        {/* Day tabs */}
+        <div style={{ display: "flex", gap: 8 }}>
+          {mealPlan.days.map((day, i) => (
+            <button key={i} onClick={() => setExpandedDay(i)} style={{
+              flex: 1, background: expandedDay === i ? "#1a1714" : "#f5f0ea",
+              border: "none", borderRadius: 12, padding: "8px 4px",
+              color: expandedDay === i ? "#fff" : "#5a5550",
+              fontWeight: 700, fontSize: 13, cursor: "pointer", WebkitTapHighlightColor: "transparent"
+            }}>
+              <div>{day.short}</div>
+              <div style={{ fontSize: 10, marginTop: 2, opacity: 0.7 }}>
+                {Object.values(day.meals || {}).reduce((s, arr) => s + (arr || []).length, 0)} 道
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Selected day */}
+        {(() => {
+          const day = mealPlan.days[expandedDay];
+          return (
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#1a1714", marginBottom: 4 }}>{day.date}</div>
+              {day.notes && (
+                <div style={{ padding: "10px 14px", background: "#fff8ed", borderRadius: 12, fontSize: 13, color: "#8a6030", marginBottom: 12, borderLeft: "3px solid #c17f3c" }}>
+                  📌 {day.notes}
+                </div>
+              )}
+
+              {activeMealSlots.map(mealType => (
+                <div key={mealType} style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#9a9590", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{MEAL_LABELS[mealType]}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {((day.meals || {})[mealType] || []).map(dishId => {
+                      const d = getDishById(dishes, dishId);
+                      if (!d) return null;
+                      const isDone = doneDishes[dishId];
+                      const isExpanded = expandedDish === dishId;
+                      return (
+                        <div key={dishId} style={{ background: "#fff", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                          <button onClick={() => setExpandedDish(isExpanded ? null : dishId)} style={{
+                            width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "14px 16px",
+                            background: "none", border: "none", cursor: "pointer", textAlign: "left", WebkitTapHighlightColor: "transparent"
+                          }}>
+                            <span style={{ fontSize: 28 }}>{d.image}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: isDone ? "#b0a89e" : "#1a1714", textDecoration: isDone ? "line-through" : "none" }}>{d.name}</div>
+                              <div className="caption">⏱ {d.estimated_time}分钟 · {d.servings}人份</div>
+                            </div>
+                            <button onClick={e => { e.stopPropagation(); toggleDone(dishId); }} style={{
+                              width: 32, height: 32, borderRadius: 10, border: "none",
+                              background: isDone ? "#c17f3c" : "#f5f0ea", cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 14, color: isDone ? "#fff" : "#9a9590", WebkitTapHighlightColor: "transparent"
+                            }}>✓</button>
+                            <span style={{ color: "#9a9590", fontSize: 14 }}>{isExpanded ? "▲" : "▼"}</span>
+                          </button>
+
+                          {isExpanded && (
+                            <div style={{ borderTop: "1px solid #f5f0ea", padding: "14px 16px" }}>
+                              {d.custom_notes.length > 0 && (
+                                <div style={{ marginBottom: 14 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: "#c17f3c", letterSpacing: 0.5, marginBottom: 8 }}>⚠️ 个人备注 — 请严格按照执行</div>
+                                  {d.custom_notes.map((note, i) => (
+                                    <div key={i} style={{ padding: "10px 12px", background: "#fff8ed", borderRadius: 10, fontSize: 14, color: "#3d2200", marginBottom: 6, lineHeight: 1.5, borderLeft: "3px solid #c17f3c" }}>
+                                      {note}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#9a9590", letterSpacing: 0.5, marginBottom: 8 }}>食材</div>
+                              {d.ingredients.slice(0, 5).map((ing, i) => (
+                                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f5f0ea", fontSize: 14 }}>
+                                  <span style={{ color: "#1a1714" }}>{ing.name}{ing.note && <span style={{ fontSize: 10, color: "#c17f3c", marginLeft: 4, fontWeight: 600 }}>特殊调料</span>}</span>
+                                  <span style={{ color: "#5a5550", fontWeight: 600 }}>{ing.quantity} {ing.unit}</span>
+                                </div>
+                              ))}
+                              {d.ingredients.length > 5 && <div className="caption" style={{ marginTop: 4 }}>还有 {d.ingredients.length - 5} 项...</div>}
+
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#9a9590", letterSpacing: 0.5, margin: "12px 0 8px" }}>步骤</div>
+                              {d.steps.map((step, i) => (
+                                <div key={i} style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+                                  <div style={{ width: 26, height: 26, borderRadius: 8, background: "#fdf3e7", color: "#c17f3c", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{step.step_number}</div>
+                                  <div style={{ fontSize: 14, color: "#1a1714", lineHeight: 1.55, flex: 1 }}>{step.instruction}</div>
+                                </div>
+                              ))}
+
+                              {/* Chef's own note for this dish */}
+                              <div style={{ marginTop: 14, borderTop: "1px solid #f5f0ea", paddingTop: 14 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: "#5a8a5a", letterSpacing: 0.5, marginBottom: 6 }}>📝 厨师备注（仅自己可见）</div>
+                                {editingChefNote === dishId ? (
+                                  <div>
+                                    <textarea
+                                      value={chefNotes[dishId] || ""}
+                                      onChange={e => setChefNotes(prev => ({ ...prev, [dishId]: e.target.value }))}
+                                      placeholder="写下你的烹饪心得或提醒..."
+                                      style={{ width: "100%", minHeight: 72, borderRadius: 10, border: "1.5px solid #5a8a5a", padding: "10px 12px", fontSize: 14, fontFamily: "inherit", resize: "none", boxSizing: "border-box", outline: "none" }}
+                                      autoFocus
+                                    />
+                                    <button onClick={() => setEditingChefNote(null)} style={{ marginTop: 6, background: "#5a8a5a", color: "#fff", border: "none", borderRadius: 10, padding: "8px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>保存</button>
+                                  </div>
+                                ) : chefNotes[dishId] ? (
+                                  <div onClick={() => setEditingChefNote(dishId)} style={{ padding: "10px 12px", background: "#f0f8f0", borderRadius: 10, fontSize: 14, color: "#1a3a1a", lineHeight: 1.5, borderLeft: "3px solid #5a8a5a", cursor: "pointer" }}>
+                                    {chefNotes[dishId]}
+                                    <div style={{ fontSize: 11, color: "#5a8a5a", marginTop: 4 }}>点击编辑</div>
+                                  </div>
+                                ) : (
+                                  <button onClick={() => setEditingChefNote(dishId)} style={{ background: "#f0f8f0", border: "1.5px dashed #5a8a5a", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#5a8a5a", cursor: "pointer", width: "100%", textAlign: "left" }}>
+                                    + 添加我的备注
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* Grocery section */}
+        <button onClick={() => setShowGrocery(!showGrocery)} style={{
+          background: "#f5f0ea", border: "none", borderRadius: 14, padding: "14px 16px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          cursor: "pointer", WebkitTapHighlightColor: "transparent"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 22 }}>🛒</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1714" }}>采购清单</div>
+              <div className="caption">共 {groceryList?.items?.length} 项</div>
+            </div>
+          </div>
+          <span style={{ color: "#9a9590" }}>{showGrocery ? "▲" : "▼"}</span>
+        </button>
+
+        {showGrocery && groceryList && (
+          <div className="card" style={{ padding: "8px 16px" }}>
+            {groceryList.items.slice(0, 12).map(item => (
+              <div key={item.id} className="checkbox-row" onClick={() => toggleCheck(item.id)}>
+                <div className={`checkbox ${checkedItems[item.id] ? "checked" : ""}`}>
+                  {checkedItems[item.id] && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
+                </div>
+                <div style={{ flex: 1, fontSize: 14, color: checkedItems[item.id] ? "#b0a89e" : "#1a1714", textDecoration: checkedItems[item.id] ? "line-through" : "none" }}>
+                  {item.name}
+                </div>
+                <div style={{ fontSize: 13, color: "#5a5550" }}>{item.quantity} {item.unit}</div>
+              </div>
+            ))}
+            {groceryList.items.length > 12 && (
+              <div className="caption" style={{ padding: "8px 0", textAlign: "center" }}>还有 {groceryList.items.length - 12} 项...</div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── APP ───────────────────────────────────────────────────────────
+function App() {
+  const [activeTab, setActiveTab] = useState("home");
+  const [dishes, setDishes] = useState(SEED_DISHES);
+  const [mealPlan, setMealPlan] = useState(SEED_MEAL_PLAN);
+  const [groceryList, setGroceryList] = useState(SEED_GROCERY);
+  const [navStack, setNavStack] = useState([{ screen: "home" }]);
+  const [cookingDish, setCookingDish] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [toastTimeout, setToastTimeout] = useState(null);
+  const [planSettings, setPlanSettings] = useState({
+    days: 5,
+    meals: { breakfast: false, lunch: true, dinner: false },
+    mealComposition: {
+      breakfast: { meat: 0, veg: 0 },
+      lunch: { meat: 2, veg: 1 },
+      dinner: { meat: 1, veg: 1 }
+    }
+  });
+
+  const current = navStack[navStack.length - 1];
+
+  const showToast = (msg) => {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    setToast(msg);
+    const t = setTimeout(() => setToast(null), 2000);
+    setToastTimeout(t);
+  };
+
+  const navigate = (screen, param) => {
+    if (["home", "dishes", "plan", "grocery", "share"].includes(screen)) {
+      setActiveTab(screen);
+      setNavStack([{ screen }]);
+    } else {
+      setNavStack(prev => [...prev, { screen, param }]);
+    }
+  };
+
+  const goBack = () => {
+    if (navStack.length > 1) {
+      setNavStack(prev => prev.slice(0, -1));
+    }
+  };
+
+  const renderScreen = () => {
+    const { screen, param } = current;
+
+    if (cookingDish) {
+      return <CookingModeScreen dish={cookingDish} onClose={() => setCookingDish(null)} />;
+    }
+
+    if (screen === "home") return (
+      <HomeScreen dishes={dishes} mealPlan={mealPlan} groceryList={groceryList} onNavigate={navigate} showToast={showToast} />
+    );
+
+    if (screen === "dishes") return (
+      <DishLibraryScreen dishes={dishes} setDishes={setDishes} onNavigate={navigate} />
+    );
+
+    if (screen === "dish-detail") {
+      const dish = getDishById(dishes, param);
+      return (
+        <DishDetailScreen
+          dish={dish}
+          onBack={goBack}
+          onCookingMode={() => setCookingDish(dish)}
+          onEdit={() => navigate("edit-dish", param)}
+          onToggleFavorite={() => setDishes(prev => prev.map(d => d.id === param ? { ...d, is_favorite: !d.is_favorite } : d))}
+          onUpdateImage={(url) => setDishes(prev => prev.map(d => d.id === param ? { ...d, imageUrl: url } : d))}
+        />
+      );
+    }
+
+    if (screen === "edit-dish") {
+      const dish = getDishById(dishes, param);
+      return (
+        <EditDishScreen
+          dish={dish}
+          onBack={goBack}
+          showToast={showToast}
+          onSave={(updated) => {
+            setDishes(prev => prev.map(d => d.id === param ? updated : d));
+            goBack();
+          }}
+        />
+      );
+    }
+
+    if (screen === "add-dish") return (
+      <AddDishScreen onBack={goBack} showToast={showToast} onSave={(newDish) => {
+        setDishes(prev => [...prev, newDish]);
+        goBack();
+        showToast("✓ 菜品已保存！");
+      }} />
+    );
+
+    if (screen === "plan") return (
+      <PlanScreen dishes={dishes} mealPlan={mealPlan} setMealPlan={setMealPlan} setGroceryList={setGroceryList} planSettings={planSettings} setPlanSettings={setPlanSettings} onNavigate={navigate} showToast={showToast} />
+    );
+
+    if (screen === "grocery") return (
+      <GroceryScreen groceryList={groceryList} setGroceryList={setGroceryList} showToast={showToast} />
+    );
+
+    if (screen === "share") return (
+      <ShareScreen dishes={dishes} mealPlan={mealPlan} groceryList={groceryList} planSettings={planSettings} showToast={showToast}
+        onViewDishLibrary={() => navigate("chef-dish-library")} />
+    );
+
+    if (screen === "chef-dish-library") return (
+      <ChefDishLibraryScreen dishes={dishes} onBack={goBack} onDishDetail={(id) => navigate("chef-dish-detail", id)} />
+    );
+
+    if (screen === "chef-dish-detail") {
+      const dish = getDishById(dishes, param);
+      return <DishDetailScreen dish={dish} onBack={goBack} onCookingMode={() => setCookingDish(dish)} chefMode={true} />;
+    }
+
+    return <HomeScreen dishes={dishes} mealPlan={mealPlan} groceryList={groceryList} onNavigate={navigate} showToast={showToast} />;
+  };
+
+  const showNav = !cookingDish;
+  const showTabs = ["home", "dishes", "plan", "grocery", "share"].includes(current.screen) && navStack.length === 1;
+
+  return (
+    <div className="app-shell">
+      {renderScreen()}
+      {showNav && showTabs && <BottomNav active={activeTab} onNavigate={navigate} />}
+      {toast && <Toast msg={toast} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
